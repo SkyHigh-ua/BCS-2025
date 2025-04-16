@@ -2,13 +2,17 @@ import { Request, Response } from "express";
 import { UserRepository } from "../dal/UserRepository";
 import logger from "../utils/logger";
 
-const userRepository = new UserRepository();
-
 export class UserController {
+  private userRepository: UserRepository;
+
+  constructor(userRepository: UserRepository = new UserRepository()) {
+    this.userRepository = userRepository;
+  }
+
   async getAllUsers(req: Request, res: Response) {
     logger.debug("Fetching all users");
     try {
-      const users = await userRepository.getAllUsers();
+      const users = await this.userRepository.getAllUsers();
       logger.info("Fetched all users successfully");
       res.status(200).json(users);
     } catch (error) {
@@ -20,7 +24,7 @@ export class UserController {
   async getUserById(req: Request, res: Response) {
     logger.debug(`Fetching user by ID: ${req.params.id}`);
     try {
-      const user = await userRepository.getUserById(Number(req.params.id));
+      const user = await this.userRepository.getUserById(Number(req.params.id));
       if (user) {
         logger.info(`User with ID ${req.params.id} fetched successfully`);
         res.status(200).json(user);
@@ -36,7 +40,9 @@ export class UserController {
   async getUserByUsername(req: Request, res: Response) {
     logger.debug(`Fetching user by username: ${req.params.username}`);
     try {
-      const user = await userRepository.getUserByUsername(req.params.username);
+      const user = await this.userRepository.getUserByUsername(
+        req.params.username
+      );
       if (user) {
         logger.info(
           `User with username ${req.params.username} fetched successfully`
@@ -56,7 +62,7 @@ export class UserController {
   async getUserByEmail(req: Request, res: Response) {
     logger.debug(`Fetching user by email: ${req.params.email}`);
     try {
-      const user = await userRepository.getUserByEmail(req.params.email);
+      const user = await this.userRepository.getUserByEmail(req.params.email);
       if (user) {
         logger.info(`User with email ${req.params.email} fetched successfully`);
         res.status(200).json(user);
@@ -79,7 +85,11 @@ export class UserController {
     const { username, email, password } = req.body;
     logger.debug(`Creating user with username: ${username}, email: ${email}`);
     try {
-      const user = await userRepository.createUser(username, email, password);
+      const user = await this.userRepository.createUser(
+        username,
+        email,
+        password
+      );
       logger.info(`User with username ${username} created successfully`);
       res.status(201).json(user);
     } catch (error) {
@@ -91,7 +101,7 @@ export class UserController {
   async updateUser(req: Request, res: Response) {
     logger.debug(`Updating user with ID: ${req.params.id}`);
     try {
-      const user = await userRepository.updateUser(
+      const user = await this.userRepository.updateUser(
         Number(req.params.id),
         req.body
       );
@@ -110,7 +120,7 @@ export class UserController {
   async deleteUser(req: Request, res: Response) {
     logger.debug(`Deleting user with ID: ${req.params.id}`);
     try {
-      await userRepository.deleteUser(Number(req.params.id));
+      await this.userRepository.deleteUser(Number(req.params.id));
       logger.info(`User with ID ${req.params.id} deleted successfully`);
       res.status(204).send();
     } catch (error) {

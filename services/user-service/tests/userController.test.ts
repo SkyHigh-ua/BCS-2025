@@ -4,7 +4,7 @@ import { UserRepository } from "../src/dal/UserRepository";
 jest.mock("../src/dal/UserRepository");
 
 const mockUserRepository = new UserRepository() as jest.Mocked<UserRepository>;
-const userController = new UserController();
+const userController = new UserController(mockUserRepository);
 
 describe("User Controller", () => {
   beforeEach(() => {
