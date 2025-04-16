@@ -1,0 +1,142 @@
+services:
+  auth-service:
+    build:
+      context: .
+      dockerfile: ./build/Dockerfile.service
+      args:
+        SERVICE_NAME: auth-service
+    ports:
+      - "5001:5000"
+    environment:
+      - DATABASE_URL=postgresql://user:password@db:5432/uptime_monitoring
+      - USER_SERVICE_URL=http://user-service:5002
+      - JWT_SECRET=SecretKey
+      - PORT=5001
+      - NODE_ENV=development
+    depends_on:
+      - db
+
+  user-service:
+    build:
+      context: .
+      dockerfile: ./build/Dockerfile.service
+      args:
+        SERVICE_NAME: user-service
+    ports:
+      - "5002:5000"
+    environment:
+      - DATABASE_URL=postgresql://user:password@db:5432/uptime_monitoring
+      - PORT=5002
+      - NODE_ENV=development
+    depends_on:
+      - db
+
+  rbac-service:
+    build:
+      context: .
+      dockerfile: ./build/Dockerfile.service
+      args:
+        SERVICE_NAME: rbac-service
+    ports:
+      - "5003:5000"
+    environment:
+      - DATABASE_URL=postgresql://user:password@db:5432/uptime_monitoring
+      - PORT=5003
+      - NODE_ENV=development
+    depends_on:
+      - db
+
+  site-service:
+    build:
+      context: .
+      dockerfile: ./build/Dockerfile.service
+      args:
+        SERVICE_NAME: site-service
+    ports:
+      - "5004:5000"
+    environment:
+      - DATABASE_URL=postgresql://user:password@db:5432/uptime_monitoring
+      - PORT=5004
+      - NODE_ENV=development
+    depends_on:
+      - db
+
+  plugin-service:
+    build:
+      context: .
+      dockerfile: ./build/Dockerfile.service
+      args:
+        SERVICE_NAME: plugin-service
+    ports:
+      - "5005:5000"
+    environment:
+      - DATABASE_URL=postgresql://user:password@db:5432/uptime_monitoring
+      - PORT=5005
+      - NODE_ENV=development
+    depends_on:
+      - db
+
+  scheduler-service:
+    build:
+      context: .
+      dockerfile: ./build/Dockerfile.service
+      args:
+        SERVICE_NAME: scheduler-service
+    ports:
+      - "5011:5000"
+    environment:
+      - MODULE_CONTROLLER_URL=http://module-controller-service:5010
+      - SITE_SERVICE_URL=http://site-service:5004
+      - PORT=5011
+      - NODE_ENV=development
+    depends_on:
+      - module-controller-service
+      - site-service
+
+  module-controller-service:
+    build:
+      context: .
+      dockerfile: ./build/Dockerfile.service
+      args:
+        SERVICE_NAME: module-controller-service
+    ports:
+      - "5010:5000"
+    environment:
+      - DATABASE_URL=postgresql://user:password@db:5432/uptime_monitoring
+      - PORT=5010
+      - NODE_ENV=development
+    depends_on:
+      - db
+
+  gateway:
+    build:
+      context: .
+      dockerfile: ./build/Dockerfile.gateway
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+    depends_on:
+      - auth-service
+      - user-service
+      - rbac-service
+      - site-service
+      - plugin-service
+      - scheduler-service
+      - module-controller-service
+
+  db:
+    build:
+      context: .
+      dockerfile: ./build/Dockerfile.database
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: uptime_monitoring
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+volumes:
+  db_data:
