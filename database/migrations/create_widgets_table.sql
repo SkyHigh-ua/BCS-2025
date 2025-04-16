@@ -1,0 +1,9 @@
+CREATE TABLE widgets (
+    id SERIAL PRIMARY KEY,
+    site_id INT NOT NULL,
+    widget_type VARCHAR(255) NOT NULL,
+    configuration JSONB,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (site_id) REFERENCES sites(id) ON DELETE CASCADE
+);
