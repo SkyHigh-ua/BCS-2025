@@ -10,10 +10,9 @@ export class SiteController {
   }
 
   async getAllSites(req: Request, res: Response) {
-    logger.debug("Fetching all sites");
     try {
       const sites = await this.siteRepository.getAllSites();
-      logger.info("Fetched all sites successfully");
+      logger.info(`[${req.method}] ${req.url} - 200: Fetched all sites`);
       res.status(200).json(sites);
     } catch (error) {
       logger.error("Error fetching sites:", error);
@@ -22,13 +21,13 @@ export class SiteController {
   }
 
   async getSiteById(req: Request, res: Response) {
-    logger.debug(`Fetching site by ID: ${req.params.id}`);
     try {
       const site = await this.siteRepository.getSiteById(Number(req.params.id));
       if (site) {
-        logger.info(`Site with ID ${req.params.id} fetched successfully`);
+        logger.info(`[${req.method}] ${req.url} - 200: Site found`);
         res.status(200).json(site);
       } else {
+        logger.info(`[${req.method}] ${req.url} - 404: Site not found`);
         res.status(404).json({ message: "Site not found" });
       }
     } catch (error) {
@@ -38,7 +37,6 @@ export class SiteController {
   }
 
   async createSite(req: Request, res: Response) {
-    logger.debug("Creating a new site");
     const { url, sshDetails } = req.body;
     try {
       const site = await this.siteRepository.createSite({
@@ -47,7 +45,7 @@ export class SiteController {
         createdAt: new Date(),
         updatedAt: new Date(),
       });
-      logger.info(`Site with URL ${url} created successfully`);
+      logger.info(`[${req.method}] ${req.url} - 201: Site created`);
       res.status(201).json(site);
     } catch (error) {
       logger.error("Error creating site:", error);
@@ -56,16 +54,16 @@ export class SiteController {
   }
 
   async updateSite(req: Request, res: Response) {
-    logger.debug(`Updating site with ID: ${req.params.id}`);
     try {
       const site = await this.siteRepository.updateSite(
         Number(req.params.id),
         req.body
       );
       if (site) {
-        logger.info(`Site with ID ${req.params.id} updated successfully`);
+        logger.info(`[${req.method}] ${req.url} - 200: Site updated`);
         res.status(200).json(site);
       } else {
+        logger.info(`[${req.method}] ${req.url} - 404: Site not found`);
         res.status(404).json({ message: "Site not found" });
       }
     } catch (error) {
@@ -75,10 +73,9 @@ export class SiteController {
   }
 
   async deleteSite(req: Request, res: Response) {
-    logger.debug(`Deleting site with ID: ${req.params.id}`);
     try {
       await this.siteRepository.deleteSite(Number(req.params.id));
-      logger.info(`Site with ID ${req.params.id} deleted successfully`);
+      logger.info(`[${req.method}] ${req.url} - 204: Site deleted`);
       res.status(204).send();
     } catch (error) {
       logger.error("Error deleting site:", error);

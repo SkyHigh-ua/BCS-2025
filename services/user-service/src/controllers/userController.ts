@@ -10,10 +10,9 @@ export class UserController {
   }
 
   async getAllUsers(req: Request, res: Response) {
-    logger.debug("Fetching all users");
     try {
       const users = await this.userRepository.getAllUsers();
-      logger.info("Fetched all users successfully");
+      logger.info(`[${req.method}] ${req.url} - 200: Fetched all users`);
       res.status(200).json(users);
     } catch (error) {
       logger.error("Error fetching users:", error);
@@ -22,13 +21,13 @@ export class UserController {
   }
 
   async getUserById(req: Request, res: Response) {
-    logger.debug(`Fetching user by ID: ${req.params.id}`);
     try {
       const user = await this.userRepository.getUserById(Number(req.params.id));
       if (user) {
-        logger.info(`User with ID ${req.params.id} fetched successfully`);
+        logger.info(`[${req.method}] ${req.url} - 200: User found`);
         res.status(200).json(user);
       } else {
+        logger.info(`[${req.method}] ${req.url} - 404: User not found`);
         res.status(404).json({ message: "User not found" });
       }
     } catch (error) {
@@ -38,17 +37,15 @@ export class UserController {
   }
 
   async getUserByUsername(req: Request, res: Response) {
-    logger.debug(`Fetching user by username: ${req.params.username}`);
     try {
       const user = await this.userRepository.getUserByUsername(
         req.params.username
       );
       if (user) {
-        logger.info(
-          `User with username ${req.params.username} fetched successfully`
-        );
+        logger.info(`[${req.method}] ${req.url} - 200: User found`);
         res.status(200).json(user);
       } else {
+        logger.info(`[${req.method}] ${req.url} - 404: User not found`);
         res.status(404).json({ message: "User not found" });
       }
     } catch (error) {
@@ -60,13 +57,13 @@ export class UserController {
   }
 
   async getUserByEmail(req: Request, res: Response) {
-    logger.debug(`Fetching user by email: ${req.params.email}`);
     try {
       const user = await this.userRepository.getUserByEmail(req.params.email);
       if (user) {
-        logger.info(`User with email ${req.params.email} fetched successfully`);
+        logger.info(`[${req.method}] ${req.url} - 200: User found`);
         res.status(200).json(user);
       } else {
+        logger.info(`[${req.method}] ${req.url} - 404: User not found`);
         res.status(404).json({ message: "User not found" });
       }
     } catch (error) {
@@ -77,20 +74,20 @@ export class UserController {
 
   async createUser(req: Request, res: Response) {
     if (!req.headers["x-internal-service"]) {
+      logger.info(`[${req.method}] ${req.url} - 403: Forbidden`);
       return res
         .status(403)
         .json({ message: "Forbidden: External requests are not allowed" });
     }
 
     const { username, email, password } = req.body;
-    logger.debug(`Creating user with username: ${username}, email: ${email}`);
     try {
       const user = await this.userRepository.createUser(
         username,
         email,
         password
       );
-      logger.info(`User with username ${username} created successfully`);
+      logger.info(`[${req.method}] ${req.url} - 201: User created`);
       res.status(201).json(user);
     } catch (error) {
       logger.error("Error creating user:", error);
@@ -99,16 +96,16 @@ export class UserController {
   }
 
   async updateUser(req: Request, res: Response) {
-    logger.debug(`Updating user with ID: ${req.params.id}`);
     try {
       const user = await this.userRepository.updateUser(
         Number(req.params.id),
         req.body
       );
       if (user) {
-        logger.info(`User with ID ${req.params.id} updated successfully`);
+        logger.info(`[${req.method}] ${req.url} - 200: User updated`);
         res.status(200).json(user);
       } else {
+        logger.info(`[${req.method}] ${req.url} - 404: User not found`);
         res.status(404).json({ message: "User not found" });
       }
     } catch (error) {
@@ -118,10 +115,9 @@ export class UserController {
   }
 
   async deleteUser(req: Request, res: Response) {
-    logger.debug(`Deleting user with ID: ${req.params.id}`);
     try {
       await this.userRepository.deleteUser(Number(req.params.id));
-      logger.info(`User with ID ${req.params.id} deleted successfully`);
+      logger.info(`[${req.method}] ${req.url} - 204: User deleted`);
       res.status(204).send();
     } catch (error) {
       logger.error("Error deleting user:", error);

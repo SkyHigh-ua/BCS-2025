@@ -1,7 +1,7 @@
 import { createLogger, format, transports } from "winston";
 
 const logger = createLogger({
-  level: process.env.NODE_ENV === "development" ? "debug" : "info",
+  level: process.env.NODE_ENV === "dev" ? "debug" : "info",
   format: format.combine(
     format.timestamp(),
     format.printf(({ timestamp, level, message }) => {

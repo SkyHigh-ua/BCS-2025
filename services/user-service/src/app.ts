@@ -20,7 +20,7 @@ app.use((req, res, next) => {
 app.use("/", userRoutes);
 
 app.use((err: any, req: any, res: any, next: any) => {
-  logger.error("Error:", err.stack || err.message || err);
+  logger.error(err.stack || err.message || err);
   res.status(500).json({ message: "Internal Server Error" });
 });
 

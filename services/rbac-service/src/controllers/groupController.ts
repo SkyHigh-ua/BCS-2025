@@ -14,7 +14,7 @@ export class GroupController {
     const { name, description } = req.body;
     try {
       const group = await this.userRepository.createGroup(name, description);
-      logger.info(`Group ${name} created successfully`);
+      logger.debug(`Group ${name} created successfully`);
       res.status(201).json(group);
     } catch (error) {
       logger.error("Error creating group:", error);
@@ -26,7 +26,7 @@ export class GroupController {
     logger.debug("Fetching all groups");
     try {
       const groups = await this.userRepository.getAllGroups();
-      logger.info("Fetched all groups successfully");
+      logger.debug("Fetched all groups successfully");
       res.status(200).json(groups);
     } catch (error) {
       logger.error("Error fetching groups:", error);
@@ -40,7 +40,7 @@ export class GroupController {
     try {
       const group = await this.userRepository.getGroupById(Number(id));
       if (group) {
-        logger.info(`Fetched group with ID ${id} successfully`);
+        logger.debug(`Fetched group with ID ${id} successfully`);
         res.status(200).json(group);
       } else {
         logger.warn(`Group with ID ${id} not found`);
@@ -59,7 +59,7 @@ export class GroupController {
     try {
       const group = await this.userRepository.updateGroup(Number(id), updates);
       if (group) {
-        logger.info(`Updated group with ID ${id} successfully`);
+        logger.debug(`Updated group with ID ${id} successfully`);
         res.status(200).json(group);
       } else {
         logger.warn(`Group with ID ${id} not found`);
@@ -76,7 +76,7 @@ export class GroupController {
     const { id } = req.params;
     try {
       await this.userRepository.deleteGroup(Number(id));
-      logger.info(`Deleted group with ID ${id} successfully`);
+      logger.debug(`Deleted group with ID ${id} successfully`);
       res.status(204).send();
     } catch (error) {
       logger.error("Error deleting group:", error);

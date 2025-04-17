@@ -24,13 +24,5 @@
     "ts-node-dev": "^1.1.8",
     "typescript": "^4.4.4",
     "@types/cors": "^2.8.13"
-  },
-  "keywords": [
-    "gateway",
-    "api",
-    "express",
-    "microservices"
-  ],
-  "author": "Your Name",
-  "license": "MIT"
+  }
 }

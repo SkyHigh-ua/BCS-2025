@@ -10,7 +10,7 @@ export class SiteRepository {
     });
 
     this.pool.on("connect", () => {
-      logger.debug("Database connected successfully");
+      logger.debug("[DB] Database connected successfully");
     });
 
     this.pool.on("error", (error) => {

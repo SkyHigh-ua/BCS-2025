@@ -14,7 +14,7 @@ export class RoleController {
     const { name, description } = req.body;
     try {
       const role = await this.userRepository.createRole(name, description);
-      logger.info(`Role ${name} created successfully`);
+      logger.debug(`Role ${name} created successfully`);
       res.status(201).json(role);
     } catch (error) {
       logger.error("Error creating role:", error);
@@ -26,7 +26,7 @@ export class RoleController {
     logger.debug("Fetching all roles");
     try {
       const roles = await this.userRepository.getAllRoles();
-      logger.info("Fetched all roles successfully");
+      logger.debug("Fetched all roles successfully");
       res.status(200).json(roles);
     } catch (error) {
       logger.error("Error fetching roles:", error);
@@ -40,7 +40,7 @@ export class RoleController {
     try {
       const role = await this.userRepository.getRoleById(Number(id));
       if (role) {
-        logger.info(`Fetched role with ID ${id} successfully`);
+        logger.debug(`Fetched role with ID ${id} successfully`);
         res.status(200).json(role);
       } else {
         logger.warn(`Role with ID ${id} not found`);
@@ -59,7 +59,7 @@ export class RoleController {
     try {
       const role = await this.userRepository.updateRole(Number(id), updates);
       if (role) {
-        logger.info(`Updated role with ID ${id} successfully`);
+        logger.debug(`Updated role with ID ${id} successfully`);
         res.status(200).json(role);
       } else {
         logger.warn(`Role with ID ${id} not found`);
@@ -76,7 +76,7 @@ export class RoleController {
     const { id } = req.params;
     try {
       await this.userRepository.deleteRole(Number(id));
-      logger.info(`Deleted role with ID ${id} successfully`);
+      logger.debug(`Deleted role with ID ${id} successfully`);
       res.status(204).send();
     } catch (error) {
       logger.error("Error deleting role:", error);
@@ -89,7 +89,7 @@ export class RoleController {
     const { groupId, roleId } = req.body;
     try {
       await this.userRepository.assignRoleToGroup(groupId, roleId);
-      logger.info(`Role ${roleId} assigned to group ${groupId}`);
+      logger.debug(`Role ${roleId} assigned to group ${groupId}`);
       res.status(200).json({ message: "Role assigned to group successfully" });
     } catch (error) {
       logger.error("Error assigning role to group:", error);
@@ -102,7 +102,7 @@ export class RoleController {
     const { userId } = req.params;
     try {
       const roles = await this.userRepository.getRolesForUser(Number(userId));
-      logger.info(`Fetched roles for user ${userId} successfully`);
+      logger.debug(`Fetched roles for user ${userId} successfully`);
       res.status(200).json(roles);
     } catch (error) {
       logger.error("Error fetching roles for user:", error);
@@ -115,7 +115,7 @@ export class RoleController {
     const { groupId } = req.params;
     try {
       const roles = await this.userRepository.getRolesForGroup(Number(groupId));
-      logger.info(`Fetched roles for group ${groupId} successfully`);
+      logger.debug(`Fetched roles for group ${groupId} successfully`);
       res.status(200).json(roles);
     } catch (error) {
       logger.error("Error fetching roles for group:", error);
@@ -130,7 +130,7 @@ export class RoleController {
     const { siteId } = req.params;
     try {
       const roles = await this.userRepository.getRolesForSite(Number(siteId));
-      logger.info(`Fetched roles for site ${siteId} successfully`);
+      logger.debug(`Fetched roles for site ${siteId} successfully`);
       res.status(200).json(roles);
     } catch (error) {
       logger.error("Error fetching roles for site:", error);
