@@ -3,6 +3,7 @@ export interface User {
   username: string;
   email: string;
   password: string;
+  pfp: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -11,8 +12,9 @@ export interface Role {
   id: number;
   name: string;
   description: string;
+  author: string;
+  permissions: any[];
   createdAt: Date;
-  updatedAt: Date;
 }
 
 export interface Group {
@@ -20,5 +22,4 @@ export interface Group {
   name: string;
   description: string;
   createdAt: Date;
-  updatedAt: Date;
 }
