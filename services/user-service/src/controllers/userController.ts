@@ -5,8 +5,8 @@ import logger from "../utils/logger";
 export class UserController {
   private userRepository: UserRepository;
 
-  constructor() {
-    this.userRepository = new UserRepository();
+  constructor(userRepository: UserRepository = new UserRepository()) {
+    this.userRepository = userRepository;
   }
 
   async getAllUsers(req: Request, res: Response) {
