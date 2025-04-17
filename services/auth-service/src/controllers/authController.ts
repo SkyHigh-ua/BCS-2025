@@ -33,7 +33,7 @@ export class AuthController {
         const token = jwt.sign(
           { id: user.id, username: user.username },
           process.env.JWT_SECRET!,
-          { expiresIn: "1h" }
+          { expiresIn: "24h" }
         );
         logger.info(
           `[${req.method}] ${req.url} - 200: User ${username} logged in successfully`
@@ -82,7 +82,7 @@ export class AuthController {
       const login_token = jwt.sign(
         { id: user.id, username: user.username },
         process.env.JWT_SECRET!,
-        { expiresIn: "1h" }
+        { expiresIn: "24h" }
       );
 
       logger.info(
