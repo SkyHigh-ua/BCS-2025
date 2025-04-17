@@ -10,8 +10,6 @@
     "test": "jest",
     "lint": "eslint . --ext .ts"
   },
-  "author": "",
-  "license": "ISC",
   "dependencies": {
     "express": "^4.17.1",
     "pg": "^8.7.1",
