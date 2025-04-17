@@ -1,5 +1,6 @@
 import { Pool } from "pg";
 import logger from "../utils/logger";
+import { User, Role, Group } from "../models/UserModels";
 
 export class UserRepository {
   private pool: Pool;
@@ -18,7 +19,7 @@ export class UserRepository {
     });
   }
 
-  async getAllUsers() {
+  async getAllUsers(): Promise<User[]> {
     try {
       const result = await this.pool.query("SELECT * FROM users");
       return result.rows;
@@ -28,7 +29,7 @@ export class UserRepository {
     }
   }
 
-  async getUserById(id: number) {
+  async getUserById(id: number): Promise<User | null> {
     try {
       const result = await this.pool.query(
         "SELECT * FROM users WHERE id = $1",
@@ -41,7 +42,7 @@ export class UserRepository {
     }
   }
 
-  async getUserByUsername(username: string) {
+  async getUserByUsername(username: string): Promise<User | null> {
     try {
       const result = await this.pool.query(
         "SELECT * FROM users WHERE username = $1",
@@ -54,7 +55,7 @@ export class UserRepository {
     }
   }
 
-  async getUserByEmail(email: string) {
+  async getUserByEmail(email: string): Promise<User | null> {
     try {
       const result = await this.pool.query(
         "SELECT * FROM users WHERE email = $1",
@@ -67,7 +68,11 @@ export class UserRepository {
     }
   }
 
-  async createUser(username: string, email: string, password: string) {
+  async createUser(
+    username: string,
+    email: string,
+    password: string
+  ): Promise<User> {
     try {
       const result = await this.pool.query(
         "INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING *",
@@ -80,10 +85,7 @@ export class UserRepository {
     }
   }
 
-  async updateUser(
-    id: number,
-    updates: Partial<{ username: string; email: string; password: string }>
-  ) {
+  async updateUser(id: number, updates: Partial<User>): Promise<User | null> {
     try {
       const fields = Object.keys(updates)
         .map((key, index) => `${key} = $${index + 1}`)
@@ -102,7 +104,7 @@ export class UserRepository {
     }
   }
 
-  async deleteUser(id: number) {
+  async deleteUser(id: number): Promise<void> {
     try {
       await this.pool.query("DELETE FROM users WHERE id = $1", [id]);
     } catch (error) {
@@ -111,7 +113,7 @@ export class UserRepository {
     }
   }
 
-  async assignRoleToUser(userId: number, roleId: number) {
+  async assignRoleToUser(userId: number, roleId: number): Promise<void> {
     try {
       await this.pool.query(
         "INSERT INTO user_roles (user_id, role_id) VALUES ($1, $2)",
@@ -126,7 +128,7 @@ export class UserRepository {
     }
   }
 
-  async assignGroupToUser(userId: number, groupId: number) {
+  async assignGroupToUser(userId: number, groupId: number): Promise<void> {
     try {
       await this.pool.query(
         "INSERT INTO user_groups (user_id, group_id) VALUES ($1, $2)",
@@ -140,4 +142,29 @@ export class UserRepository {
       throw new Error("Database error");
     }
   }
+}
+
+export interface User {
+  id: number;
+  username: string;
+  email: string;
+  password: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Role {
+  id: number;
+  name: string;
+  description: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Group {
+  id: number;
+  name: string;
+  description: string;
+  createdAt: Date;
+  updatedAt: Date;
 }

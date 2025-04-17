@@ -1,5 +1,6 @@
 import { Pool } from "pg";
 import logger from "../utils/logger";
+import { User, Role, Group } from "../models/RbacModels";
 
 export class UserRepository {
   private pool: Pool;
@@ -48,7 +49,7 @@ export class UserRepository {
     }
   }
 
-  async createGroup(name: string, description: string) {
+  async createGroup(name: string, description: string): Promise<Group> {
     try {
       const result = await this.pool.query(
         "INSERT INTO groups (name, description) VALUES ($1, $2) RETURNING *",
@@ -61,7 +62,7 @@ export class UserRepository {
     }
   }
 
-  async getAllGroups() {
+  async getAllGroups(): Promise<Group[]> {
     try {
       const result = await this.pool.query("SELECT * FROM groups");
       return result.rows;
@@ -71,7 +72,7 @@ export class UserRepository {
     }
   }
 
-  async getGroupById(id: number) {
+  async getGroupById(id: number): Promise<Group | null> {
     try {
       const result = await this.pool.query(
         "SELECT * FROM groups WHERE id = $1",
@@ -86,8 +87,8 @@ export class UserRepository {
 
   async updateGroup(
     id: number,
-    updates: Partial<{ name: string; description: string }>
-  ) {
+    updates: Partial<Group>
+  ): Promise<Group | null> {
     try {
       const fields = Object.keys(updates)
         .map((key, index) => `${key} = $${index + 1}`)
@@ -106,7 +107,7 @@ export class UserRepository {
     }
   }
 
-  async deleteGroup(id: number) {
+  async deleteGroup(id: number): Promise<void> {
     try {
       await this.pool.query("DELETE FROM groups WHERE id = $1", [id]);
     } catch (error) {
@@ -115,7 +116,7 @@ export class UserRepository {
     }
   }
 
-  async createRole(name: string, description: string) {
+  async createRole(name: string, description: string): Promise<Role> {
     try {
       const result = await this.pool.query(
         "INSERT INTO roles (name, description) VALUES ($1, $2) RETURNING *",
@@ -128,7 +129,7 @@ export class UserRepository {
     }
   }
 
-  async getAllRoles() {
+  async getAllRoles(): Promise<Role[]> {
     try {
       const result = await this.pool.query("SELECT * FROM roles");
       return result.rows;
@@ -138,7 +139,7 @@ export class UserRepository {
     }
   }
 
-  async getRoleById(id: number) {
+  async getRoleById(id: number): Promise<Role | null> {
     try {
       const result = await this.pool.query(
         "SELECT * FROM roles WHERE id = $1",
@@ -151,10 +152,7 @@ export class UserRepository {
     }
   }
 
-  async updateRole(
-    id: number,
-    updates: Partial<{ name: string; description: string }>
-  ) {
+  async updateRole(id: number, updates: Partial<Role>): Promise<Role | null> {
     try {
       const fields = Object.keys(updates)
         .map((key, index) => `${key} = $${index + 1}`)
@@ -173,7 +171,7 @@ export class UserRepository {
     }
   }
 
-  async deleteRole(id: number) {
+  async deleteRole(id: number): Promise<void> {
     try {
       await this.pool.query("DELETE FROM roles WHERE id = $1", [id]);
     } catch (error) {
@@ -242,4 +240,29 @@ export class UserRepository {
       throw new Error("Database error");
     }
   }
+}
+
+export interface User {
+  id: number;
+  username: string;
+  email: string;
+  password: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Role {
+  id: number;
+  name: string;
+  description: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Group {
+  id: number;
+  name: string;
+  description: string;
+  createdAt: Date;
+  updatedAt: Date;
 }

@@ -1,5 +1,6 @@
 import { Pool } from "pg";
 import logger from "../utils/logger";
+import { Site, Plugin, Module } from "../models/SiteModels";
 
 export class SiteRepository {
   private pool: Pool;
@@ -18,7 +19,7 @@ export class SiteRepository {
     });
   }
 
-  async getAllSites() {
+  async getAllSites(): Promise<Site[]> {
     try {
       const result = await this.pool.query("SELECT * FROM sites");
       return result.rows;
@@ -28,7 +29,7 @@ export class SiteRepository {
     }
   }
 
-  async getSiteById(id: number) {
+  async getSiteById(id: number): Promise<Site | null> {
     try {
       const result = await this.pool.query(
         "SELECT * FROM sites WHERE id = $1",
@@ -41,12 +42,7 @@ export class SiteRepository {
     }
   }
 
-  async createSite(site: {
-    url: string;
-    sshDetails: string;
-    createdAt: Date;
-    updatedAt: Date;
-  }) {
+  async createSite(site: Site): Promise<Site> {
     try {
       const result = await this.pool.query(
         "INSERT INTO sites (url, ssh_details, created_at, updated_at) VALUES ($1, $2, $3, $4) RETURNING *",
@@ -59,10 +55,7 @@ export class SiteRepository {
     }
   }
 
-  async updateSite(
-    id: number,
-    updates: Partial<{ url: string; sshDetails: string }>
-  ) {
+  async updateSite(id: number, updates: Partial<Site>): Promise<Site | null> {
     try {
       const fields = Object.keys(updates)
         .map((key, index) => `${key} = $${index + 1}`)
@@ -81,7 +74,7 @@ export class SiteRepository {
     }
   }
 
-  async deleteSite(id: number) {
+  async deleteSite(id: number): Promise<void> {
     try {
       await this.pool.query("DELETE FROM sites WHERE id = $1", [id]);
     } catch (error) {
@@ -89,4 +82,32 @@ export class SiteRepository {
       throw new Error("Database error");
     }
   }
+}
+
+export interface Site {
+  id: number;
+  domain: string;
+  description: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Plugin {
+  id: number;
+  name: string;
+  description: string;
+  repoLink: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Module {
+  id: number;
+  name: string;
+  description: string;
+  scriptFile: string;
+  inputs: any;
+  outputs: any;
+  createdAt: Date;
+  updatedAt: Date;
 }
