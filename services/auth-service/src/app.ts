@@ -1,5 +1,4 @@
 import express from "express";
-import bodyParser from "body-parser";
 import cors from "cors";
 import authRoutes from "./routes/authRoutes";
 import logger from "./utils/logger";
@@ -8,10 +7,13 @@ const app = express();
 const PORT = process.env.PORT || 5001;
 
 app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.use((req, res, next) => {
   logger.info(`${req.method} ${req.url}`);
+  logger.debug(`Headers: ${JSON.stringify(req.headers)}`);
+  logger.debug(`Body: ${JSON.stringify(req.body)}`);
   next();
 });
 
