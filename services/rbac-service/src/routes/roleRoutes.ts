@@ -1,11 +1,16 @@
 import { Router } from "express";
 import { RoleController } from "../controllers/roleController";
+import { validateRole } from "../middleware/authMiddleware";
 
 const router = Router();
 const roleController = new RoleController();
 
 router.post("/", roleController.createRole.bind(roleController));
-router.get("/", roleController.getAllRoles.bind(roleController));
+router.get(
+  "/",
+  validateRole([0]),
+  roleController.getAllRoles.bind(roleController)
+);
 router.get("/:id", roleController.getRoleById.bind(roleController));
 router.put("/:id", roleController.updateRole.bind(roleController));
 router.delete("/:id", roleController.deleteRole.bind(roleController));

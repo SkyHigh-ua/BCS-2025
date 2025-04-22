@@ -240,6 +240,19 @@ export class UserRepository {
       throw new Error("Database error");
     }
   }
+
+  async getGroupsOwnedByUser(userId: number): Promise<Group[]> {
+    try {
+      const result = await this.pool.query(
+        "SELECT * FROM groups WHERE owner_id = $1",
+        [userId]
+      );
+      return result.rows;
+    } catch (error) {
+      console.error(`Error fetching groups owned by user (${userId}):`, error);
+      throw new Error("Database error");
+    }
+  }
 }
 
 export interface User {
