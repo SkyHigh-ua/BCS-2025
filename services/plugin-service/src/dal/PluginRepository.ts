@@ -62,8 +62,14 @@ export class PluginRepository {
   async createPlugin(plugin: Plugin): Promise<Plugin> {
     try {
       const result = await this.pool.query(
-        "INSERT INTO plugins (type, created_at, updated_at) VALUES ($1, $2, $3) RETURNING *",
-        [plugin.type, plugin.createdAt, plugin.updatedAt]
+        "INSERT INTO plugins (name, description, repo_link, created_at, updated_at) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+        [
+          plugin.name,
+          plugin.description,
+          plugin.repoLink,
+          plugin.createdAt,
+          plugin.updatedAt,
+        ]
       );
       return result.rows[0];
     } catch (error) {

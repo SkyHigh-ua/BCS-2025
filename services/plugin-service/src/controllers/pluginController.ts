@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { PluginRepository } from "../dal/PluginRepository";
 import logger from "../utils/logger";
+import { loadPluginService } from "../services/pluginLoader";
 
 export class PluginController {
   private pluginRepository: PluginRepository;
@@ -79,6 +80,22 @@ export class PluginController {
     } catch (error) {
       logger.error("Error deleting plugin:", error);
       res.status(500).json({ message: "Error deleting plugin", error });
+    }
+  }
+
+  async loadPlugin(req: Request, res: Response) {
+    const { id } = req.params;
+    const { sshKey, otherParams } = req.body; // Example parameters
+
+    try {
+      await loadPluginService(id, sshKey, otherParams);
+      logger.info(
+        `[${req.method}] ${req.url} - 200: Plugin loaded successfully`
+      );
+      res.status(200).json({ message: "Plugin loaded successfully" });
+    } catch (error) {
+      logger.error("Error loading plugin:", error);
+      res.status(500).json({ message: "Error loading plugin", error });
     }
   }
 }

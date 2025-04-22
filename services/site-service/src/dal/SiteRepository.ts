@@ -99,6 +99,21 @@ export class SiteRepository {
       throw new Error("Database error");
     }
   }
+
+  async addPluginToSite(siteId: number, pluginId: string): Promise<void> {
+    try {
+      await this.pool.query(
+        "INSERT INTO site_plugins (site_id, plugin_id) VALUES ($1, $2)",
+        [siteId, pluginId]
+      );
+    } catch (error) {
+      logger.error(
+        `Error adding plugin (${pluginId}) to site (${siteId}):`,
+        error
+      );
+      throw new Error("Database error");
+    }
+  }
 }
 
 export interface Site {
