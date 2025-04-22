@@ -82,6 +82,23 @@ export class SiteRepository {
       throw new Error("Database error");
     }
   }
+
+  async getUserSites(userId: number): Promise<Site[]> {
+    try {
+      const query = `
+        SELECT DISTINCT s.*
+        FROM sites s
+        LEFT JOIN site_groups sg ON s.id = sg.site_id
+        LEFT JOIN group_users gu ON sg.group_id = gu.group_id
+        WHERE s.owner_id = $1 OR gu.user_id = $1
+      `;
+      const result = await this.pool.query(query, [userId]);
+      return result.rows;
+    } catch (error) {
+      logger.error(`Error fetching sites for user (${userId}):`, error);
+      throw new Error("Database error");
+    }
+  }
 }
 
 export interface Site {

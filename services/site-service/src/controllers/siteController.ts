@@ -82,4 +82,16 @@ export class SiteController {
       res.status(500).json({ message: "Error deleting site", error });
     }
   }
+
+  async getUserSites(req: Request, res: Response) {
+    try {
+      const userId = req.user.id;
+      const sites = await this.siteRepository.getUserSites(userId);
+      logger.info(`[${req.method}] ${req.url} - 200: Fetched user sites`);
+      res.status(200).json(sites);
+    } catch (error) {
+      logger.error("Error fetching user sites:", error);
+      res.status(500).json({ message: "Error fetching user sites", error });
+    }
+  }
 }

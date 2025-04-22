@@ -8,38 +8,44 @@ const siteController = new SiteController();
 router.post(
   "/",
   validateJWT,
-  validateRole(["admin", "moderator"]),
+  validateRole([0, 1]),
   siteController.createSite.bind(siteController)
 );
 router.get(
   "/",
   validateJWT,
-  validateRole(["contributor", "admin", "moderator"]),
+  validateRole([0]),
   siteController.getAllSites.bind(siteController)
 );
 router.get(
   "/:id",
   validateJWT,
-  validateRole(["contributor", "admin", "moderator"]),
+  validateRole([0, 1, 2]),
   siteController.getSiteById.bind(siteController)
 );
 router.put(
   "/:id",
   validateJWT,
-  validateRole(["admin", "moderator"]),
+  validateRole([0, 1, 2]),
   siteController.updateSite.bind(siteController)
 );
 router.delete(
   "/:id",
   validateJWT,
-  validateRole(["admin"]),
+  validateRole([0]),
   siteController.deleteSite.bind(siteController)
 );
 router.post(
   "/:id/plugins",
   validateJWT,
-  validateRole(["admin", "moderator"]),
+  validateRole([0, 1, 2]),
   siteController.addPluginToSite.bind(siteController)
+);
+router.get(
+  "/my-sites",
+  validateJWT,
+  validateRole([0, 1, 2]),
+  siteController.getUserSites.bind(siteController)
 );
 
 export default router;
