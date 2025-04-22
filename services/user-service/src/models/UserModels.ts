@@ -4,6 +4,7 @@ export interface User {
   email: string;
   password: string;
   pfp: string;
+  role: number;
   createdAt: Date;
   updatedAt: Date;
 }

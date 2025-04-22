@@ -73,13 +73,6 @@ export class UserController {
   }
 
   async createUser(req: Request, res: Response) {
-    if (!req.headers["x-internal-service"]) {
-      logger.info(`[${req.method}] ${req.url} - 403: Forbidden`);
-      return res
-        .status(403)
-        .json({ message: "Forbidden: External requests are not allowed" });
-    }
-
     const { username, email, password } = req.body;
     try {
       const user = await this.userRepository.createUser(
@@ -92,6 +85,25 @@ export class UserController {
     } catch (error) {
       logger.error("Error creating user:", error);
       res.status(500).json({ message: "Error creating user", error });
+    }
+  }
+
+  async createSubUser(req: Request, res: Response) {
+    const { username, email, password } = req.body;
+    try {
+      const user = await this.userRepository.createUser(
+        username,
+        email,
+        password,
+        2
+      );
+      logger.info(`[${req.method}] ${req.url} - 201: Sub-user created`);
+      res.status(201).json(user);
+    } catch (error) {
+      logger.error("Error creating sub-user:", error);
+      res.status(500).json({ message: "Error creating sub-user", error });
+    }
+  }
     }
   }
 

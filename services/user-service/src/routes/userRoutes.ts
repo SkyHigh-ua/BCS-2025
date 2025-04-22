@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { UserController } from "../controllers/userController";
 import { validateJWT } from "../middleware/authMiddleware";
+import { validateInternalService } from "../middleware/internalServiceMiddleware";
 
 const router = Router();
 const userController = new UserController();
@@ -21,7 +22,16 @@ router.get(
   validateJWT,
   userController.getUserByEmail.bind(userController)
 );
-router.post("/", validateJWT, userController.createUser.bind(userController));
+router.post(
+  "/",
+  validateInternalService,
+  userController.createUser.bind(userController)
+);
+router.post(
+  "/sub-user",
+  validateJWT,
+  userController.createAdminUser.bind(userController)
+);
 router.put("/:id", validateJWT, userController.updateUser.bind(userController));
 router.delete(
   "/:id",

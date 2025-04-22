@@ -71,12 +71,13 @@ export class UserRepository {
   async createUser(
     username: string,
     email: string,
-    password: string
+    password: string,
+    role: number = 1
   ): Promise<User> {
     try {
       const result = await this.pool.query(
-        "INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING *",
-        [username, email, password]
+        "INSERT INTO users (username, email, password, role) VALUES ($1, $2, $3, $4) RETURNING *",
+        [username, email, password, role]
       );
       return result.rows[0];
     } catch (error) {
