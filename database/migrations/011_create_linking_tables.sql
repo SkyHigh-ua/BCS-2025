@@ -45,3 +45,12 @@ CREATE TABLE public.site_modules (
     FOREIGN KEY (site_id) REFERENCES public.sites(id) ON DELETE CASCADE,
     FOREIGN KEY (module_id) REFERENCES public.modules(id) ON DELETE CASCADE
 );
+
+-- Relationship table for module hierarchy
+CREATE TABLE public.module_parents (
+    module_id INT NOT NULL,
+    parent_module_id INT NOT NULL,
+    PRIMARY KEY (module_id, parent_module_id),
+    FOREIGN KEY (module_id) REFERENCES public.modules(id) ON DELETE CASCADE,
+    FOREIGN KEY (parent_module_id) REFERENCES public.modules(id) ON DELETE CASCADE
+);

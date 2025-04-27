@@ -1,9 +1,11 @@
 -- Users of the system
 CREATE TABLE public.users (
     id SERIAL PRIMARY KEY,
-    username VARCHAR(50) NOT NULL,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
     password VARCHAR(255) NOT NULL,
     email VARCHAR(100) NOT NULL UNIQUE,
+    company VARCHAR(100) UNIQUE DEFAULT NULL,
     pfp VARCHAR(255),
     role INT NOT NULL DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -18,6 +20,7 @@ CREATE TABLE public.modules (
     repo_link VARCHAR(255) NOT NULL,
     inputs JSONB,
     outputs JSONB,
+    type INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -27,6 +30,7 @@ CREATE TABLE public.plugins (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,
     description TEXT,
+    requirements JSONB,
     repo_link VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -55,16 +59,7 @@ CREATE TABLE public.groups (
 CREATE TABLE public.sites (
     id SERIAL PRIMARY KEY,
     domain VARCHAR(255) NOT NULL UNIQUE,
+    name VARCHAR(255) NOT NULL,
     description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Schedules for modules to run on sites
-CREATE TABLE public.schedule (
-    id SERIAL PRIMARY KEY,
-    site_id INT NOT NULL,
-    module_id INT NOT NULL,
-    cron_expression VARCHAR(100) NOT NULL,
-    FOREIGN KEY (site_id) REFERENCES public.sites(id) ON DELETE CASCADE,
-    FOREIGN KEY (module_id) REFERENCES public.modules(id) ON DELETE CASCADE
 );
