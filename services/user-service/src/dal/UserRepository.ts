@@ -42,19 +42,6 @@ export class UserRepository {
     }
   }
 
-  async getUserByUsername(username: string): Promise<User | null> {
-    try {
-      const result = await this.pool.query(
-        "SELECT * FROM users WHERE username = $1",
-        [username]
-      );
-      return result.rows[0] || null;
-    } catch (error) {
-      logger.error(`Error fetching user by username (${username}):`, error);
-      throw new Error("Database error");
-    }
-  }
-
   async getUserByEmail(email: string): Promise<User | null> {
     try {
       const result = await this.pool.query(
@@ -69,19 +56,40 @@ export class UserRepository {
   }
 
   async createUser(
-    username: string,
+    first_name: string,
+    last_name: string,
     email: string,
     password: string,
-    role: number = 1
+    role: number = 1,
+    parentId?: number
   ): Promise<User> {
     try {
-      const result = await this.pool.query(
-        "INSERT INTO users (username, email, password, role) VALUES ($1, $2, $3, $4) RETURNING *",
-        [username, email, password, role]
-      );
+      const query = parentId
+        ? `INSERT INTO users (first_name, last_name, email, password, role, parent_id) 
+           VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`
+        : `INSERT INTO users (first_name, last_name, email, password, role) 
+           VALUES ($1, $2, $3, $4, $5) RETURNING *`;
+
+      const values = parentId
+        ? [first_name, last_name, email, password, role, parentId]
+        : [first_name, last_name, email, password, role];
+
+      const result = await this.pool.query(query, values);
       return result.rows[0];
     } catch (error) {
       logger.error("Error creating user:", error);
+      throw new Error("Database error");
+    }
+  }
+
+  async assignParentToUser(userId: number, parentId: number): Promise<void> {
+    try {
+      await this.pool.query(`UPDATE users SET parent_id = $1 WHERE id = $2`, [
+        parentId,
+        userId,
+      ]);
+    } catch (error) {
+      logger.error(`Error assigning parent to user (${userId}):`, error);
       throw new Error("Database error");
     }
   }
@@ -93,7 +101,7 @@ export class UserRepository {
         .join(", ");
       const values = Object.values(updates);
       const result = await this.pool.query(
-        `UPDATE users SET ${fields} WHERE id = $${
+        `UPDATE users SET ${fields}, updated_at = CURRENT_TIMESTAMP WHERE id = $${
           values.length + 1
         } RETURNING *`,
         [...values, id]
@@ -113,59 +121,4 @@ export class UserRepository {
       throw new Error("Database error");
     }
   }
-
-  async assignRoleToUser(userId: number, roleId: number): Promise<void> {
-    try {
-      await this.pool.query(
-        "INSERT INTO user_roles (user_id, role_id) VALUES ($1, $2)",
-        [userId, roleId]
-      );
-    } catch (error) {
-      logger.error(
-        `Error assigning role (${roleId}) to user (${userId}):`,
-        error
-      );
-      throw new Error("Database error");
-    }
-  }
-
-  async assignGroupToUser(userId: number, groupId: number): Promise<void> {
-    try {
-      await this.pool.query(
-        "INSERT INTO user_groups (user_id, group_id) VALUES ($1, $2)",
-        [userId, groupId]
-      );
-    } catch (error) {
-      logger.error(
-        `Error assigning group (${groupId}) to user (${userId}):`,
-        error
-      );
-      throw new Error("Database error");
-    }
-  }
-}
-
-export interface User {
-  id: number;
-  username: string;
-  email: string;
-  password: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface Role {
-  id: number;
-  name: string;
-  description: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface Group {
-  id: number;
-  name: string;
-  description: string;
-  createdAt: Date;
-  updatedAt: Date;
 }

@@ -1,8 +1,12 @@
 export interface User {
   id: number;
-  username: string;
-  email: string;
+  first_name: string;
+  last_name: string;
   password: string;
+  email: string;
+  pfp?: string;
+  role: number;
+  parentId?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -11,8 +15,9 @@ export interface Role {
   id: number;
   name: string;
   description: string;
+  author: string;
+  permissions: any[];
   createdAt: Date;
-  updatedAt: Date;
 }
 
 export interface Group {
@@ -20,5 +25,4 @@ export interface Group {
   name: string;
   description: string;
   createdAt: Date;
-  updatedAt: Date;
 }

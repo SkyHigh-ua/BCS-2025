@@ -8,7 +8,7 @@ const groupController = new GroupController();
 router.post("/", groupController.createGroup.bind(groupController));
 router.get(
   "/",
-  validateRole([0]),
+  validateRole(["0"]),
   groupController.getAllGroups.bind(groupController)
 );
 router.get("/:id", groupController.getGroupById.bind(groupController));
@@ -18,6 +18,14 @@ router.delete("/:id", groupController.deleteGroup.bind(groupController));
 router.get(
   "/user/:userId/owned",
   groupController.getGroupsOwnedByUser.bind(groupController)
+);
+router.post(
+  "/assign/site",
+  groupController.assignGroupToSite.bind(groupController)
+);
+router.post(
+  "/assign/user",
+  groupController.assignGroupToUser.bind(groupController)
 );
 
 export default router;

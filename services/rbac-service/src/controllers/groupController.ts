@@ -83,4 +83,30 @@ export class GroupController {
       res.status(500).json({ message: "Error deleting group", error });
     }
   }
+
+  async assignGroupToSite(req: Request, res: Response) {
+    logger.debug("Assigning group to site");
+    const { groupId, siteId } = req.body;
+    try {
+      await this.userRepository.assignGroupToSite(groupId, siteId);
+      logger.debug(`Group ${groupId} assigned to site ${siteId}`);
+      res.status(200).json({ message: "Group assigned to site successfully" });
+    } catch (error) {
+      logger.error("Error assigning group to site:", error);
+      res.status(500).json({ message: "Error assigning group to site", error });
+    }
+  }
+
+  async assignGroupToUser(req: Request, res: Response) {
+    logger.debug("Assigning group to user");
+    const { groupId, userId } = req.body;
+    try {
+      await this.userRepository.assignGroupToUser(userId, groupId);
+      logger.debug(`Group ${groupId} assigned to user ${userId}`);
+      res.status(200).json({ message: "Group assigned to user successfully" });
+    } catch (error) {
+      logger.error("Error assigning group to user:", error);
+      res.status(500).json({ message: "Error assigning group to user", error });
+    }
+  }
 }

@@ -6,6 +6,11 @@ import logger from "./utils/logger";
 const app = express();
 const PORT = process.env.PORT || 5001;
 
+if (!process.env.USER_SERVICE_URL) {
+  logger.error("USER_SERVICE_URL is not defined in the environment variables.");
+  process.exit(1);
+}
+
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -16,11 +21,6 @@ app.use((req, res, next) => {
   logger.debug(`Body: ${JSON.stringify(req.body)}`);
   next();
 });
-
-if (!process.env.USER_SERVICE_URL) {
-  logger.error("USER_SERVICE_URL is not defined in the environment variables.");
-  process.exit(1);
-}
 
 app.use("/", authRoutes);
 

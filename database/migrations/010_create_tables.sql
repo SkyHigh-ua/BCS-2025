@@ -5,11 +5,12 @@ CREATE TABLE public.users (
     last_name VARCHAR(50) NOT NULL,
     password VARCHAR(255) NOT NULL,
     email VARCHAR(100) NOT NULL UNIQUE,
-    company VARCHAR(100) UNIQUE DEFAULT NULL,
     pfp VARCHAR(255),
     role INT NOT NULL DEFAULT 1,
+    parent_user INT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (parent_user) REFERENCES public.users(id) ON DELETE CASCADE
 );
 
 -- Modules/widgets that can be installed on sites
@@ -20,7 +21,7 @@ CREATE TABLE public.modules (
     repo_link VARCHAR(255) NOT NULL,
     inputs JSONB,
     outputs JSONB,
-    type INT NOT NULL,
+    tags VARCHAR(255)[],
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -32,6 +33,7 @@ CREATE TABLE public.plugins (
     description TEXT,
     requirements JSONB,
     repo_link VARCHAR(255) NOT NULL,
+    tags VARCHAR(255)[],
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -61,5 +63,7 @@ CREATE TABLE public.sites (
     domain VARCHAR(255) NOT NULL UNIQUE,
     name VARCHAR(255) NOT NULL,
     description TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    author INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (author) REFERENCES public.users(id) ON DELETE CASCADE
 );

@@ -13,11 +13,6 @@ router.get(
   userController.getUserById.bind(userController)
 );
 router.get(
-  "/username/:username",
-  validateJWT,
-  userController.getUserByUsername.bind(userController)
-);
-router.get(
   "/email/:email",
   validateJWT,
   userController.getUserByEmail.bind(userController)
@@ -30,7 +25,7 @@ router.post(
 router.post(
   "/sub-user",
   validateJWT,
-  userController.createAdminUser.bind(userController)
+  userController.createSubUser.bind(userController)
 );
 router.put("/:id", validateJWT, userController.updateUser.bind(userController));
 router.delete(

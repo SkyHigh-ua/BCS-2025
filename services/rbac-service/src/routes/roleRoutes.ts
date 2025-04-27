@@ -14,11 +14,7 @@ router.get(
 router.get("/:id", roleController.getRoleById.bind(roleController));
 router.put("/:id", roleController.updateRole.bind(roleController));
 router.delete("/:id", roleController.deleteRole.bind(roleController));
-
-router.post(
-  "/assign-to-group",
-  roleController.assignRoleToGroup.bind(roleController)
-);
+router.post("/assign", roleController.assignRole.bind(roleController));
 router.get(
   "/user/:userId",
   roleController.getRolesForUser.bind(roleController)

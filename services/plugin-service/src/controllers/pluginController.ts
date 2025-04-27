@@ -85,7 +85,7 @@ export class PluginController {
 
   async loadPlugin(req: Request, res: Response) {
     const { id } = req.params;
-    const { sshKey, otherParams } = req.body; // Example parameters
+    const { sshKey, otherParams } = req.body;
 
     try {
       await loadPluginService(id, sshKey, otherParams);
@@ -96,6 +96,48 @@ export class PluginController {
     } catch (error) {
       logger.error("Error loading plugin:", error);
       res.status(500).json({ message: "Error loading plugin", error });
+    }
+  }
+
+  async assignPluginToSite(req: Request, res: Response) {
+    const { pluginId } = req.params;
+    const { siteId } = req.body;
+
+    try {
+      const result = await this.pluginRepository.assignPluginToSite(
+        pluginId,
+        siteId
+      );
+      logger.info(`[${req.method}] ${req.url} - 200: Plugin assigned to site`);
+      res
+        .status(200)
+        .json({ message: "Plugin assigned to site successfully", result });
+    } catch (error) {
+      logger.error("Error assigning plugin to site:", error);
+      res
+        .status(500)
+        .json({ message: "Error assigning plugin to site", error });
+    }
+  }
+
+  async findPluginsByTags(req: Request, res: Response) {
+    const { tags } = req.query;
+
+    if (!tags) {
+      return res.status(400).json({ message: "Tags are required" });
+    }
+
+    const tagArray = Array.isArray(tags) ? tags : [tags];
+
+    try {
+      const plugins = await this.pluginRepository.findPluginsByTags(tagArray);
+      logger.info(`[${req.method}] ${req.url} - 200: Plugins fetched by tags`);
+      res.status(200).json(plugins);
+    } catch (error) {
+      logger.error("Error fetching plugins by tags:", error);
+      res
+        .status(500)
+        .json({ message: "Error fetching plugins by tags", error });
     }
   }
 }

@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { UserRepository } from "../dal/UserRepository";
 import logger from "../utils/logger";
+import axios from "axios";
 
 export class UserController {
   private userRepository: UserRepository;
@@ -36,26 +37,6 @@ export class UserController {
     }
   }
 
-  async getUserByUsername(req: Request, res: Response) {
-    try {
-      const user = await this.userRepository.getUserByUsername(
-        req.params.username
-      );
-      if (user) {
-        logger.info(`[${req.method}] ${req.url} - 200: User found`);
-        res.status(200).json(user);
-      } else {
-        logger.info(`[${req.method}] ${req.url} - 404: User not found`);
-        res.status(404).json({ message: "User not found" });
-      }
-    } catch (error) {
-      logger.error("Error fetching user by username:", error);
-      res
-        .status(500)
-        .json({ message: "Error fetching user by username", error });
-    }
-  }
-
   async getUserByEmail(req: Request, res: Response) {
     try {
       const user = await this.userRepository.getUserByEmail(req.params.email);
@@ -73,13 +54,33 @@ export class UserController {
   }
 
   async createUser(req: Request, res: Response) {
-    const { username, email, password } = req.body;
+    const { first_name, last_name, email, password, role, company } = req.body;
     try {
       const user = await this.userRepository.createUser(
-        username,
+        first_name,
+        last_name,
         email,
-        password
+        password,
+        role
       );
+
+      if (company) {
+        const groupResponse = await axios.post(
+          `${process.env.RBAC_SERVICE_URL}/groups/`,
+          { companyName: company }
+        );
+        const groupId = groupResponse.data.id;
+
+        await axios.post(`${process.env.RBAC_SERVICE_URL}/groups/assign`, {
+          userId: user.id,
+          groupId: groupId,
+        });
+
+        logger.info(
+          `[${req.method}] ${req.url} - Group created and assigned for company: ${company}`
+        );
+      }
+
       logger.info(`[${req.method}] ${req.url} - 201: User created`);
       res.status(201).json(user);
     } catch (error) {
@@ -89,21 +90,46 @@ export class UserController {
   }
 
   async createSubUser(req: Request, res: Response) {
-    const { username, email, password } = req.body;
+    const {
+      first_name,
+      last_name,
+      email,
+      password,
+      company_id,
+      role_id,
+      parent_id,
+    } = req.body;
     try {
       const user = await this.userRepository.createUser(
-        username,
+        first_name,
+        last_name,
         email,
         password,
-        2
+        2,
+        parent_id
       );
+
+      await axios.post(`${process.env.RBAC_SERVICE_URL}/groups/assign`, {
+        userId: user.id,
+        groupId: company_id,
+      });
+      logger.info(
+        `[${req.method}] ${req.url} - Group assigned for user: ${email}`
+      );
+
+      await axios.post(`${process.env.RBAC_SERVICE_URL}/roles/assign`, {
+        userId: user.id,
+        roleId: role_id,
+      });
+      logger.info(
+        `[${req.method}] ${req.url} - Role assigned for user: ${email}`
+      );
+
       logger.info(`[${req.method}] ${req.url} - 201: Sub-user created`);
       res.status(201).json(user);
     } catch (error) {
       logger.error("Error creating sub-user:", error);
       res.status(500).json({ message: "Error creating sub-user", error });
-    }
-  }
     }
   }
 

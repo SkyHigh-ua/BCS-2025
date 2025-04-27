@@ -253,29 +253,38 @@ export class UserRepository {
       throw new Error("Database error");
     }
   }
-}
 
-export interface User {
-  id: number;
-  username: string;
-  email: string;
-  password: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
+  async assignRole(
+    userId: number,
+    groupId: number,
+    roleId: number
+  ): Promise<void> {
+    try {
+      await this.pool.query(
+        "INSERT INTO user_roles (user_id, role_id, group_id) VALUES ($1, $2, $3)",
+        [userId, roleId, groupId]
+      );
+    } catch (error) {
+      console.error(
+        `Error assigning role (${roleId}) to user (${userId}) in group (${groupId}):`,
+        error
+      );
+      throw new Error("Database error");
+    }
+  }
 
-export interface Role {
-  id: number;
-  name: string;
-  description: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface Group {
-  id: number;
-  name: string;
-  description: string;
-  createdAt: Date;
-  updatedAt: Date;
+  async assignGroupToSite(groupId: number, siteId: number): Promise<void> {
+    try {
+      await this.pool.query(
+        "INSERT INTO group_sites (group_id, site_id) VALUES ($1, $2)",
+        [groupId, siteId]
+      );
+    } catch (error) {
+      console.error(
+        `Error assigning group (${groupId}) to site (${siteId}):`,
+        error
+      );
+      throw new Error("Database error");
+    }
+  }
 }

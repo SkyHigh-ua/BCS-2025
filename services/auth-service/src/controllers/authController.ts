@@ -6,7 +6,7 @@ import logger from "../utils/logger";
 
 export class AuthController {
   async login(req: Request, res: Response) {
-    const { username, password } = req.body;
+    const { email, password } = req.body;
     try {
       const token = jwt.sign(
         { service: "auth-service" },
@@ -15,7 +15,7 @@ export class AuthController {
       );
 
       const userResponse = await axios.get(
-        `${process.env.USER_SERVICE_URL}/username/${username}`,
+        `${process.env.USER_SERVICE_URL}/email/${email}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -23,7 +23,7 @@ export class AuthController {
 
       if (!userResponse || !userResponse.data) {
         logger.warn(
-          `[${req.method}] ${req.url} - 404: User ${username} not found`
+          `[${req.method}] ${req.url} - 404: User ${email} not found`
         );
         return res.status(404).json({ message: "User not found" });
       }
@@ -31,17 +31,17 @@ export class AuthController {
       const user = userResponse.data;
       if (user && (await bcrypt.compare(password, user.password))) {
         const token = jwt.sign(
-          { id: user.id, username: user.username },
+          { id: user.id, email: user.email, role: user.role },
           process.env.JWT_SECRET!,
           { expiresIn: "24h" }
         );
         logger.info(
-          `[${req.method}] ${req.url} - 200: User ${username} logged in successfully`
+          `[${req.method}] ${req.url} - 200: User ${email} logged in successfully`
         );
         res.status(200).json({ token });
       } else {
         logger.warn(
-          `[${req.method}] ${req.url} - 401: Invalid credentials for username: ${username}`
+          `[${req.method}] ${req.url} - 401: Invalid credentials for user: ${email}`
         );
         res.status(401).json({ message: "Invalid credentials" });
       }
@@ -52,7 +52,7 @@ export class AuthController {
   }
 
   async register(req: Request, res: Response) {
-    const { username, email, password } = req.body;
+    const { email, password, first_name, last_name, company } = req.body;
     try {
       const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -65,9 +65,12 @@ export class AuthController {
       const userResponse = await axios.post(
         `${process.env.USER_SERVICE_URL}/`,
         {
-          username,
+          first_name,
+          last_name,
           email,
           password: hashedPassword,
+          role: 1,
+          company,
         },
         {
           headers: {
@@ -80,13 +83,13 @@ export class AuthController {
       const user = userResponse.data;
 
       const login_token = jwt.sign(
-        { id: user.id, username: user.username },
+        { id: user.id, email: user.email, role: user.role },
         process.env.JWT_SECRET!,
         { expiresIn: "24h" }
       );
 
       logger.info(
-        `[${req.method}] ${req.url} - 201: User ${username} registered successfully`
+        `[${req.method}] ${req.url} - 201: User with email ${email} registered successfully`
       );
       res.status(201).json({ message: "User registered", user, login_token });
     } catch (error) {

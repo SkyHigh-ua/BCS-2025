@@ -7,24 +7,29 @@ const moduleController = new ModuleController();
 
 router.post(
   "/",
-  validateRole("sysops"),
+  validateRole("0"),
   moduleController.createModule.bind(moduleController)
 );
 router.get("/", moduleController.getAllModules.bind(moduleController));
 router.get("/:id", moduleController.getModuleById.bind(moduleController));
+router.get(
+  "/site/:siteId",
+  moduleController.getModulesBySiteId.bind(moduleController)
+);
 router.put(
   "/:id",
-  validateRole("sysops"),
+  validateRole("0"),
   moduleController.updateModule.bind(moduleController)
 );
 router.delete(
   "/:id",
-  validateRole("sysops"),
+  validateRole("0"),
   moduleController.deleteModule.bind(moduleController)
 );
 router.post(
-  "/execute/:id",
-  moduleController.executeModule.bind(moduleController)
+  "/site/:siteId",
+  moduleController.assignModulesToSite.bind(moduleController)
 );
+router.get("/tags", moduleController.getModulesByTags.bind(moduleController));
 
 export default router;

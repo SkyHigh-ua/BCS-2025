@@ -33,6 +33,7 @@ CREATE TABLE public.site_plugins (
     id SERIAL PRIMARY KEY,
     site_id INT NOT NULL,
     plugin_id INT NOT NULL,
+    UNIQUE (site_id, plugin_id),
     FOREIGN KEY (site_id) REFERENCES public.sites(id) ON DELETE CASCADE,
     FOREIGN KEY (plugin_id) REFERENCES public.plugins(id) ON DELETE CASCADE
 );

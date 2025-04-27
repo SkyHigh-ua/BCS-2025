@@ -1,16 +1,19 @@
+export interface Site {
+  id: number;
+  domain: string;
+  name: string;
+  description: string;
+  author: number;
+  createdAt: Date;
+}
+
 export interface Plugin {
   id: number;
   name: string;
   description: string;
+  requirements: any;
   repoLink: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface Site {
-  id: number;
-  domain: string;
-  description: string;
+  tags: string[];
   createdAt: Date;
   updatedAt: Date;
 }

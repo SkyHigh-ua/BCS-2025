@@ -35,18 +35,6 @@ router.delete(
   validateRole([0]),
   siteController.deleteSite.bind(siteController)
 );
-router.post(
-  "/:id/plugins",
-  validateJWT,
-  validateRole([0, 1, 2]),
-  siteController.addPluginToSite.bind(siteController)
-);
-router.post(
-  "/:id/plugins/:pluginId/load",
-  validateJWT,
-  validateRole([0, 1]),
-  siteController.addAndLoadPluginToSite.bind(siteController)
-);
 router.get(
   "/my-sites",
   validateJWT,

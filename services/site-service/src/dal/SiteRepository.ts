@@ -22,7 +22,14 @@ export class SiteRepository {
   async getAllSites(): Promise<Site[]> {
     try {
       const result = await this.pool.query("SELECT * FROM sites");
-      return result.rows;
+      return result.rows.map((row) => ({
+        id: row.id,
+        domain: row.domain,
+        name: row.name,
+        description: row.description,
+        author: row.author,
+        createdAt: row.created_at,
+      }));
     } catch (error) {
       logger.error("Error fetching all sites:", error);
       throw new Error("Database error");
@@ -35,7 +42,16 @@ export class SiteRepository {
         "SELECT * FROM sites WHERE id = $1",
         [id]
       );
-      return result.rows[0] || null;
+      if (result.rows.length === 0) return null;
+      const row = result.rows[0];
+      return {
+        id: row.id,
+        domain: row.domain,
+        name: row.name,
+        description: row.description,
+        author: row.author,
+        createdAt: row.created_at,
+      };
     } catch (error) {
       logger.error(`Error fetching site by ID (${id}):`, error);
       throw new Error("Database error");
@@ -45,10 +61,18 @@ export class SiteRepository {
   async createSite(site: Site): Promise<Site> {
     try {
       const result = await this.pool.query(
-        "INSERT INTO sites (url, ssh_details, created_at, updated_at) VALUES ($1, $2, $3, $4) RETURNING *",
-        [site.url, site.sshDetails, site.createdAt, site.updatedAt]
+        "INSERT INTO sites (domain, name, description, author) VALUES ($1, $2, $3, $4) RETURNING *",
+        [site.domain, site.name, site.description, site.author]
       );
-      return result.rows[0];
+      const row = result.rows[0];
+      return {
+        id: row.id,
+        domain: row.domain,
+        name: row.name,
+        description: row.description,
+        author: row.author,
+        createdAt: row.created_at,
+      };
     } catch (error) {
       logger.error("Error creating site:", error);
       throw new Error("Database error");
@@ -86,60 +110,22 @@ export class SiteRepository {
   async getUserSites(userId: number): Promise<Site[]> {
     try {
       const query = `
-        SELECT DISTINCT s.*
+        SELECT s.*
         FROM sites s
-        LEFT JOIN site_groups sg ON s.id = sg.site_id
-        LEFT JOIN group_users gu ON sg.group_id = gu.group_id
-        WHERE s.owner_id = $1 OR gu.user_id = $1
+        WHERE s.author = $1
       `;
       const result = await this.pool.query(query, [userId]);
-      return result.rows;
+      return result.rows.map((row) => ({
+        id: row.id,
+        domain: row.domain,
+        name: row.name,
+        description: row.description,
+        author: row.author,
+        createdAt: row.created_at,
+      }));
     } catch (error) {
       logger.error(`Error fetching sites for user (${userId}):`, error);
       throw new Error("Database error");
     }
   }
-
-  async addPluginToSite(siteId: number, pluginId: string): Promise<void> {
-    try {
-      await this.pool.query(
-        "INSERT INTO site_plugins (site_id, plugin_id) VALUES ($1, $2)",
-        [siteId, pluginId]
-      );
-    } catch (error) {
-      logger.error(
-        `Error adding plugin (${pluginId}) to site (${siteId}):`,
-        error
-      );
-      throw new Error("Database error");
-    }
-  }
-}
-
-export interface Site {
-  id: number;
-  domain: string;
-  description: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface Plugin {
-  id: number;
-  name: string;
-  description: string;
-  repoLink: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface Module {
-  id: number;
-  name: string;
-  description: string;
-  scriptFile: string;
-  inputs: any;
-  outputs: any;
-  createdAt: Date;
-  updatedAt: Date;
 }

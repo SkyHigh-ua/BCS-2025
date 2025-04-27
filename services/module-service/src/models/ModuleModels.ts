@@ -1,18 +1,20 @@
+export interface Site {
+  id: number;
+  domain: string;
+  name: string;
+  description: string;
+  author: number;
+  createdAt: Date;
+}
+
 export interface Module {
   id: number;
   name: string;
   description: string;
-  scriptFile: string;
+  repoLink: string;
   inputs: any;
   outputs: any;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface Site {
-  id: number;
-  domain: string;
-  description: string;
+  tags: string[];
   createdAt: Date;
   updatedAt: Date;
 }

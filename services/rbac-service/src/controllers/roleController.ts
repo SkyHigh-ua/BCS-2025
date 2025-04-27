@@ -84,16 +84,22 @@ export class RoleController {
     }
   }
 
-  async assignRoleToGroup(req: Request, res: Response) {
-    logger.debug("Assigning role to group");
-    const { groupId, roleId } = req.body;
+  async assignRole(req: Request, res: Response) {
+    logger.debug("Assigning role to user in group");
+    const { userId, groupId, roleId } = req.body;
     try {
-      await this.userRepository.assignRoleToGroup(groupId, roleId);
-      logger.debug(`Role ${roleId} assigned to group ${groupId}`);
-      res.status(200).json({ message: "Role assigned to group successfully" });
+      await this.userRepository.assignRole(userId, groupId, roleId);
+      logger.debug(
+        `Role ${roleId} assigned to user ${userId} in group ${groupId}`
+      );
+      res
+        .status(200)
+        .json({ message: "Role assigned to user in group successfully" });
     } catch (error) {
-      logger.error("Error assigning role to group:", error);
-      res.status(500).json({ message: "Error assigning role to group", error });
+      logger.error("Error assigning role to user in group:", error);
+      res
+        .status(500)
+        .json({ message: "Error assigning role to user in group", error });
     }
   }
 

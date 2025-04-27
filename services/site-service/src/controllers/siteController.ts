@@ -38,13 +38,13 @@ export class SiteController {
   }
 
   async createSite(req: Request, res: Response) {
-    const { url, sshDetails } = req.body;
+    const { domain, name, description, author } = req.body;
     try {
       const site = await this.siteRepository.createSite({
-        url,
-        sshDetails,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        domain,
+        name,
+        description,
+        author,
       });
       logger.info(`[${req.method}] ${req.url} - 201: Site created`);
       res.status(201).json(site);
@@ -93,30 +93,6 @@ export class SiteController {
     } catch (error) {
       logger.error("Error fetching user sites:", error);
       res.status(500).json({ message: "Error fetching user sites", error });
-    }
-  }
-
-  async addAndLoadPluginToSite(req: Request, res: Response) {
-    const siteId = Number(req.params.id);
-    const pluginId = req.params.pluginId;
-    const { sshKey, otherParams } = req.body;
-
-    try {
-      await this.siteRepository.addPluginToSite(siteId, pluginId);
-
-      const pluginServiceUrl = process.env.PLUGIN_SERVICE_URL;
-      await axios.post(`${pluginServiceUrl}/plugins/${pluginId}/load`, {
-        sshKey,
-        otherParams,
-      });
-
-      logger.info(`[${req.method}] ${req.url} - 200: Plugin added and loaded`);
-      res.status(200).json({ message: "Plugin added and loaded successfully" });
-    } catch (error) {
-      logger.error("Error adding and loading plugin:", error);
-      res
-        .status(500)
-        .json({ message: "Error adding and loading plugin", error });
     }
   }
 }

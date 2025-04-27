@@ -6,6 +6,13 @@ import logger from "./utils/logger";
 const app = express();
 const PORT = process.env.PORT || 5010;
 
+if (!process.env.SCHEDULER_SERVICE_URL) {
+  logger.error(
+    "SCHEDULER_SERVICE_URL is not defined in the environment variables."
+  );
+  process.exit(1);
+}
+
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

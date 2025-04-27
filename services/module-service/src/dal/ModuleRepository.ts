@@ -1,6 +1,6 @@
 import { Pool } from "pg";
 import logger from "../utils/logger";
-import { Module, Site } from "../models/ModuleModels";
+import { Module } from "../models/ModuleModels";
 
 export class ModuleRepository {
   private pool: Pool;
@@ -45,13 +45,15 @@ export class ModuleRepository {
   async createModule(module: Module): Promise<Module> {
     try {
       const result = await this.pool.query(
-        "INSERT INTO modules (name, description, script_file, inputs, outputs, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *",
+        `INSERT INTO modules (name, description, repo_link, inputs, outputs, tags, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
         [
           module.name,
           module.description,
-          module.scriptFile,
+          module.repoLink,
           module.inputs,
           module.outputs,
+          module.tags,
           module.createdAt,
           module.updatedAt,
         ]
@@ -93,23 +95,56 @@ export class ModuleRepository {
       throw new Error("Database error");
     }
   }
-}
 
-export interface Module {
-  id: number;
-  name: string;
-  description: string;
-  scriptFile: string;
-  inputs: any;
-  outputs: any;
-  createdAt: Date;
-  updatedAt: Date;
-}
+  async getModulesBySiteId(siteId: number): Promise<Module[]> {
+    try {
+      const result = await this.pool.query(
+        `SELECT m.* FROM modules m
+         JOIN site_modules sm ON m.id = sm.module_id
+         WHERE sm.site_id = $1`,
+        [siteId]
+      );
+      return result.rows;
+    } catch (error) {
+      logger.error(`Error fetching modules for site (${siteId}):`, error);
+      throw new Error("Database error");
+    }
+  }
 
-export interface Site {
-  id: number;
-  domain: string;
-  description: string;
-  createdAt: Date;
-  updatedAt: Date;
+  async assignModulesToSite(
+    siteId: number,
+    moduleIds: number[]
+  ): Promise<void> {
+    try {
+      const values = moduleIds
+        .map((moduleId) => `(${siteId}, ${moduleId})`)
+        .join(", ");
+      const query = `INSERT INTO site_modules (site_id, module_id) VALUES ${values}`;
+      await this.pool.query(query);
+      logger.debug(
+        `Modules [${moduleIds.join(", ")}] assigned to site ${siteId}`
+      );
+    } catch (error) {
+      logger.error(
+        `Error assigning modules [${moduleIds.join(
+          ", "
+        )}] to site (${siteId}):`,
+        error
+      );
+      throw new Error("Database error");
+    }
+  }
+
+  async getModulesByTags(tags: string[]): Promise<Module[]> {
+    try {
+      const query = `
+        SELECT * FROM modules
+        WHERE tags && $1::text[]`;
+      const result = await this.pool.query(query, [tags]);
+      return result.rows;
+    } catch (error) {
+      logger.error("Error fetching modules by tags:", error);
+      throw new Error("Database error");
+    }
+  }
 }

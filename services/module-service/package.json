@@ -1,5 +1,5 @@
 {
-  "name": "module-controller-service",
+  "name": "module-service",
   "version": "1.0.0",
   "description": "Module Service",
   "main": "src/app.ts",
