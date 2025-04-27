@@ -1,6 +1,6 @@
 x-env: &service-env
   DATABASE_URL: postgresql://postgres:password@db:5432/postgres
-  JWT_SECRET: key # TODO: move to proper secret management service
+  JWT_SECRET: key
   NODE_ENV: dev
 
 services:
@@ -140,6 +140,17 @@ services:
       - scheduler-service
       - module-service
       - module-controller-service
+
+  client:
+    build:
+      context: .
+      dockerfile: ./build/Dockerfile.client
+    ports:
+      - "8080:80"
+    environment:
+      - NODE_ENV=dev
+    depends_on:
+      - gateway
 
   db:
     build:
