@@ -1,5 +1,8 @@
 {
   "compilerOptions": {
+    "include": ["src"],
+    "exclude": ["node_modules"],
+    "extends": "./tsconfig.paths.json",
     "target": "es6",
     "module": "esnext",
     "lib": [
