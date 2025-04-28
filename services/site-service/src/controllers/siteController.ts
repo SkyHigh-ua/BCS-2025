@@ -86,10 +86,16 @@ export class SiteController {
 
   async getUserSites(req: Request, res: Response) {
     try {
-      const userId = req.user.id;
-      const sites = await this.siteRepository.getUserSites(userId);
-      logger.info(`[${req.method}] ${req.url} - 200: Fetched user sites`);
-      res.status(200).json(sites);
+      const user = req.user;
+      if (user && "id" in user) {
+        const userId = user.id;
+        const sites = await this.siteRepository.getUserSites(userId);
+        logger.info(`[${req.method}] ${req.url} - 200: Fetched user sites`);
+        res.status(200).json(sites);
+      } else {
+        logger.info(`[${req.method}] ${req.url} - 400: Invalid user type`);
+        res.status(400).json({ message: "Invalid user type" });
+      }
     } catch (error) {
       logger.error("Error fetching user sites:", error);
       res.status(500).json({ message: "Error fetching user sites", error });

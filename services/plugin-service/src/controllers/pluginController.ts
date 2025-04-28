@@ -40,10 +40,14 @@ export class PluginController {
   async createPlugin(req: Request, res: Response) {
     const { type } = req.body;
     try {
+      const { name, description, requirements, repoLink, tags } = req.body;
+
       const plugin = await this.pluginRepository.createPlugin({
-        type,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        name,
+        description,
+        requirements,
+        repoLink,
+        tags,
       });
       logger.info(`[${req.method}] ${req.url} - 201: Plugin created`);
       res.status(201).json(plugin);
@@ -130,7 +134,9 @@ export class PluginController {
     const tagArray = Array.isArray(tags) ? tags : [tags];
 
     try {
-      const plugins = await this.pluginRepository.findPluginsByTags(tagArray);
+      const plugins = await this.pluginRepository.findPluginsByTags(
+        tagArray.map((tag) => String(tag))
+      );
       logger.info(`[${req.method}] ${req.url} - 200: Plugins fetched by tags`);
       res.status(200).json(plugins);
     } catch (error) {

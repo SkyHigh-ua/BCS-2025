@@ -6,9 +6,17 @@ const getAuthHeaders = () => ({
   Authorization: `Bearer ${localStorage.getItem("jwt")}`,
 });
 
-export const fetchDefaultPlugins = async (params: { tag: string }) => {
+export const fetchDefaultPlugins = async () => {
   const response = await axios.get(`${API_BASE_URL}/plugins`, {
-    params,
+    params: { tag: "default" },
+    headers: getAuthHeaders(),
+  });
+  return response.data;
+};
+
+export const fetchPluginsByTag = async (tag: string) => {
+  const response = await axios.get(`${API_BASE_URL}/plugins`, {
+    params: { tag },
     headers: getAuthHeaders(),
   });
   return response.data;

@@ -38,16 +38,15 @@ export class ModuleController {
   }
 
   async createModule(req: Request, res: Response) {
-    const { name, description, scriptFile, inputs, outputs } = req.body;
+    const { name, description, repoLink, inputs, outputs, tags } = req.body;
     try {
       const module = await this.moduleRepository.createModule({
         name,
         description,
-        scriptFile,
+        repoLink,
         inputs,
         outputs,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        tags,
       });
       logger.info(`[${req.method}] ${req.url} - 201: Module created`);
       res.status(201).json(module);
@@ -144,13 +143,9 @@ export class ModuleController {
           ", "
         )}] assigned to site ${siteId}`
       );
-      res
-        .status(201)
-        .json({
-          message: `Modules [${moduleIds.join(
-            ", "
-          )}] assigned to site ${siteId}`,
-        });
+      res.status(201).json({
+        message: `Modules [${moduleIds.join(", ")}] assigned to site ${siteId}`,
+      });
     } catch (error) {
       logger.error(
         `[${req.method}] ${req.url} - 500: Error assigning modules to site`,
@@ -170,7 +165,10 @@ export class ModuleController {
 
     try {
       const tagArray = Array.isArray(tags) ? tags : [tags];
-      const modules = await this.moduleRepository.getModulesByTags(tagArray);
+      const stringTags = tagArray.filter(
+        (tag): tag is string => typeof tag === "string"
+      );
+      const modules = await this.moduleRepository.getModulesByTags(stringTags);
       logger.info(`[${req.method}] ${req.url} - 200: Modules fetched by tags`);
       res.status(200).json(modules);
     } catch (error) {

@@ -8,7 +8,7 @@ const roleController = new RoleController();
 router.post("/", roleController.createRole.bind(roleController));
 router.get(
   "/",
-  validateRole([0]),
+  validateRole(["0"]),
   roleController.getAllRoles.bind(roleController)
 );
 router.get("/:id", roleController.getRoleById.bind(roleController));

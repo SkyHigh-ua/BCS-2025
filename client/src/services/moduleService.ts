@@ -19,9 +19,17 @@ export const assignModules = async (
   return response.data;
 };
 
-export const fetchDefaultModules = async (params: { tag: string }) => {
+export const fetchDefaultModules = async () => {
   const response = await axios.get(`${API_BASE_URL}/modules`, {
-    params,
+    params: { tag: "default" },
+    headers: getAuthHeaders(),
+  });
+  return response.data;
+};
+
+export const fetchModulesByTag = async (tag: string) => {
+  const response = await axios.get(`${API_BASE_URL}/modules`, {
+    params: { tag },
     headers: getAuthHeaders(),
   });
   return response.data;

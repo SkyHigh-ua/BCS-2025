@@ -63,7 +63,7 @@ export class PluginRepository {
       new Date(),
       new Date(),
     ];
-    const result = await this.db.query(query, values);
+    const result = await this.pool.query(query, values);
     return result.rows[0];
   }
 
@@ -98,7 +98,7 @@ export class PluginRepository {
       new Date(),
       pluginId,
     ];
-    const result = await this.db.query(query, values);
+    const result = await this.pool.query(query, values);
     return result.rows[0];
   }
 
@@ -119,7 +119,7 @@ export class PluginRepository {
       RETURNING *;
     `;
     const values = [siteId, pluginId];
-    const result = await this.db.query(query, values);
+    const result = await this.pool.query(query, values);
     return result.rows[0];
   }
 
@@ -129,7 +129,7 @@ export class PluginRepository {
       WHERE $1 && tags;
     `;
     const values = [tags];
-    const result = await this.db.query(query, values);
+    const result = await this.pool.query(query, values);
     return result.rows;
   }
 }

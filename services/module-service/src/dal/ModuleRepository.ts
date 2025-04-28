@@ -42,11 +42,13 @@ export class ModuleRepository {
     }
   }
 
-  async createModule(module: Module): Promise<Module> {
+  async createModule(
+    module: Omit<Module, "id" | "createdAt" | "updatedAt">
+  ): Promise<Module> {
     try {
       const result = await this.pool.query(
         `INSERT INTO modules (name, description, repo_link, inputs, outputs, tags, created_at, updated_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+         VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
         [
           module.name,
           module.description,
@@ -54,8 +56,6 @@ export class ModuleRepository {
           module.inputs,
           module.outputs,
           module.tags,
-          module.createdAt,
-          module.updatedAt,
         ]
       );
       return result.rows[0];

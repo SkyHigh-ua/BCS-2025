@@ -14,9 +14,10 @@ export class ScheduleController {
 
     if (this.schedules[`${siteId}-${moduleId}`]) {
       logger.warn(`Module ${moduleId} is already scheduled for site ${siteId}`);
-      return res
+      res
         .status(400)
         .json({ message: "Module is already scheduled for this site" });
+      return Promise.resolve();
     }
 
     const task = setInterval(async () => {
@@ -33,7 +34,7 @@ export class ScheduleController {
       } catch (error) {
         logger.error(
           `Error executing module ${moduleId} for site ${siteId}:`,
-          error.message
+          (error as Error).message
         );
       }
     }, interval);
@@ -45,7 +46,7 @@ export class ScheduleController {
     });
   }
 
-  public unscheduleModule(req: Request, res: Response): void {
+  public unscheduleModule(req: Request, res: Response): Response {
     const { siteId, moduleId } = req.params;
 
     logger.debug(`Unscheduling module ${moduleId} for site ${siteId}`);
@@ -60,7 +61,7 @@ export class ScheduleController {
     clearInterval(this.schedules[`${siteId}-${moduleId}`]);
     delete this.schedules[`${siteId}-${moduleId}`];
     logger.debug(`Module ${moduleId} unscheduled for site ${siteId}`);
-    res
+    return res
       .status(200)
       .json({ message: `Module ${moduleId} unscheduled for site ${siteId}` });
   }

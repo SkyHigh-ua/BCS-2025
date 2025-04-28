@@ -58,7 +58,7 @@ export class SiteRepository {
     }
   }
 
-  async createSite(site: Site): Promise<Site> {
+  async createSite(site: Omit<Site, "id" | "createdAt">): Promise<Site> {
     try {
       const result = await this.pool.query(
         "INSERT INTO sites (domain, name, description, author) VALUES ($1, $2, $3, $4) RETURNING *",

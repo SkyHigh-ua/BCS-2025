@@ -109,4 +109,21 @@ export class GroupController {
       res.status(500).json({ message: "Error assigning group to user", error });
     }
   }
+
+  async getGroupsOwnedByUser(req: Request, res: Response) {
+    logger.debug("Fetching groups owned by user");
+    const { userId } = req.params;
+    try {
+      const groups = await this.userRepository.getGroupsOwnedByUser(
+        Number(userId)
+      );
+      logger.debug(`Fetched groups owned by user ${userId} successfully`);
+      res.status(200).json(groups);
+    } catch (error) {
+      logger.error("Error fetching groups owned by user:", error);
+      res
+        .status(500)
+        .json({ message: "Error fetching groups owned by user", error });
+    }
+  }
 }
