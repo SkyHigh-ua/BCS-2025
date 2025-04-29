@@ -2,6 +2,14 @@ x-env: &service-env
   DATABASE_URL: postgresql://postgres:password@db:5432/postgres
   JWT_SECRET: key
   NODE_ENV: dev
+  AUTH_SERVICE_URL: http://auth-service:5001
+  USER_SERVICE_URL: http://user-service:5002
+  RBAC_SERVICE_URL: http://rbac-service:5003
+  SITE_SERVICE_URL: http://site-service:5004
+  PLUGIN_SERVICE_URL: http://plugin-service:5005
+  MODULE_SERVICE_URL: http://module-service:5010
+  MODULE_CONTROLLER_SERVICE_URL: http://module-controller-service:5011
+  SCHEDULER_SERVICE_URL: http://scheduler-service:5012
 
 services:
   auth-service:
@@ -14,7 +22,6 @@ services:
       - "5001:5000"
     environment:
       <<: *service-env
-      USER_SERVICE_URL: http://user-service:5002
       PORT: 5001
     depends_on:
       - db
@@ -113,9 +120,6 @@ services:
       - "5012:5000"
     environment:
       <<: *service-env
-      SITE_SERVICE_URL: http://site-service:5004
-      MODULE_URL: http://module-service:5010
-      MODULE_CONTROLLER_URL: http://module-controller-service:5011
       PORT: 5012
     depends_on:
       - module-service
@@ -127,11 +131,10 @@ services:
       context: .
       dockerfile: ./build/Dockerfile.gateway
     ports:
-      - "3000:3000"
+      - "4000:4000"
     environment:
-      - NODE_ENV=dev
+      NODE_ENV: dev
     depends_on:
-      - etc-service
       - auth-service
       - user-service
       - rbac-service
@@ -146,9 +149,10 @@ services:
       context: .
       dockerfile: ./build/Dockerfile.client
     ports:
-      - "8080:80"
+      - "3000:3000"
     environment:
-      - NODE_ENV=dev
+      NODE_ENV: dev
+      REACT_APP_API_BASE_URL: http://gateway:4000
     depends_on:
       - gateway
 

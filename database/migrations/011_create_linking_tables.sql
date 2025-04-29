@@ -14,7 +14,7 @@ CREATE TABLE public.user_roles (
     role_id INT NOT NULL,
     group_id INT DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE
+    FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE,
     FOREIGN KEY (role_id) REFERENCES public.roles(id) ON DELETE CASCADE,
     FOREIGN KEY (group_id) REFERENCES public.groups(id) ON DELETE CASCADE
 );
