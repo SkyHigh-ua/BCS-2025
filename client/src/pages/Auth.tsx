@@ -2,8 +2,8 @@ import React from "react";
 import Login from "@/components/Auth/Login";
 import Signup from "@/components/Auth/Signup";
 import Index from "@/components/Auth/Index";
-import image from "../assets/images/auth.png";
-import logo from "../assets/images/auth-logo.svg";
+import image from "@/assets/images/auth.png";
+import logo from "@/assets/images/auth-logo.svg";
 
 interface AuthPageProps {
   mode?: "login" | "signup";

@@ -1,13 +1,31 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/ui/button";
 import { CardContent } from "@/ui/card";
 import { Check } from "lucide-react";
+import { fetchDefaultModules } from "@/services/moduleService";
 
 const ChooseModulesForm: React.FC<{
   onComplete: (data: string[]) => void;
   initialData: string[];
 }> = ({ onComplete, initialData }) => {
   const [selectedModules, setSelectedModules] = useState(initialData);
+  const [monitoringOptions, setMonitoringOptions] = useState<
+    { id: string; name: string }[]
+  >([]);
+
+  useEffect(() => {
+    const loadDefaultModules = async () => {
+      try {
+        const modules = await fetchDefaultModules();
+        setMonitoringOptions(
+          modules.map((module: any) => ({ id: module.id, name: module.name }))
+        );
+      } catch (error) {
+        console.error("Error fetching default modules:", error);
+      }
+    };
+    loadDefaultModules();
+  }, []);
 
   const toggleModule = (moduleName: string) => {
     setSelectedModules((prev) =>
@@ -21,13 +39,6 @@ const ChooseModulesForm: React.FC<{
     onComplete(selectedModules);
   };
 
-  // Define monitoring options data
-  const monitoringOptions = [
-    { id: 1, name: "Uptime", selected: true },
-    { id: 2, name: "Performance", selected: false },
-    { id: 3, name: "Security", selected: false },
-    { id: 4, name: "SEO", selected: false },
-  ];
   return (
     <CardContent className="space-y-6 text-center">
       <h2 className="text-2xl font-semibold">Site added successfully</h2>

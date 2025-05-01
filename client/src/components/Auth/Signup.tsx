@@ -1,20 +1,25 @@
 import React, { useState } from "react";
 import { Card } from "@/ui/card";
-import ProgressBar from "@/components/ui/progressBar";
+import ProgressBar from "@/ui/progressBar";
 import RegistrationForm from "@/components/Auth/Stages/RegistrationForm";
 import PersonalInfoForm from "@/components/Auth/Stages/PersonalInfoForm";
 import AddSiteForm from "@/components/Auth/Stages/AddSiteForm";
 import ChooseModulesForm from "@/components/Auth/Stages/ChooseModulesForm";
 import { useNavigate } from "react-router-dom";
+import { signup } from "@/services/authService";
+import { createSite } from "@/services/siteService";
+import { assignModules } from "@/services/moduleService";
+import { assignPluginToSite } from "../../services/pluginService";
 
 const Signup: React.FC = () => {
   const [stage, setStage] = useState(1);
   const navigate = useNavigate();
+  const [siteId, setSiteId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     registration: { email: "", password: "", confirmPassword: "" },
     personalInfo: { firstName: "", lastName: "", companyName: "" },
-    siteInfo: { url: "", name: "", monitoringType: "" },
+    siteInfo: { url: "", name: "", pluginId: "" },
     modules: [],
   });
 
@@ -25,7 +30,38 @@ const Signup: React.FC = () => {
     { id: 4, label: "04", completed: stage === 4 },
   ];
 
-  const nextStage = () => setStage((prev) => Math.min(prev + 1, 4));
+  const nextStage = async () => {
+    if (stage === 3) {
+      try {
+        const { email, password } = formData.registration;
+        const { firstName, lastName, companyName } = formData.personalInfo;
+        const signupResponse = await signup({
+          email,
+          password,
+          firstName,
+          lastName,
+          companyName,
+        });
+
+        if (signupResponse.token) {
+          localStorage.setItem("jwt", signupResponse.token);
+        }
+
+        const { url, name, pluginId } = formData.siteInfo;
+        const siteResponse = await createSite({ url, name });
+        setSiteId(siteResponse.id);
+        const pluginResponse = await assignPluginToSite(
+          pluginId,
+          siteResponse.id
+        );
+      } catch (error) {
+        console.error("Error creating user or site:", error);
+        return;
+      }
+    }
+    setStage((prev) => Math.min(prev + 1, 4));
+  };
+
   const prevStage = () => setStage((prev) => Math.max(prev - 1, 1));
 
   const updateFormData = (key: string, data: any) => {
@@ -63,10 +99,17 @@ const Signup: React.FC = () => {
       case 4:
         return (
           <ChooseModulesForm
-            onComplete={(data) => {
+            onComplete={async (data) => {
               updateFormData("modules", data);
-              const siteName = formData.siteInfo.name || "default-site";
-              navigate(`/dashboard/${siteName}`);
+              if (siteId) {
+                try {
+                  await assignModules(siteId, data);
+                  const siteName = formData.siteInfo.name;
+                  navigate(`/dashboard/${siteName}`);
+                } catch (error) {
+                  console.error("Error assigning modules:", error);
+                }
+              }
             }}
             initialData={formData.modules}
           />

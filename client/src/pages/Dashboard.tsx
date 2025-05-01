@@ -1,28 +1,44 @@
-import React, { useEffect } from "react";
-import { Outlet, useNavigate, Route, Routes } from "react-router-dom";
-import DashboardSettings from "@/components/Settings/DashboardSettings";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Main } from "@/components/Dashboard/Main";
+import { Navbar } from "@/components/Dashboard/Navbar";
+import { Sidebar } from "@/components/Dashboard/Sidebar";
+import { getUserSites } from "@/services/siteService";
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
+  const [sites, setSites] = useState<string[]>([]);
+
+  // useEffect(() => {
+  //   const jwt = localStorage.getItem("jwt");
+  //   if (!jwt) {
+  //     navigate("/");
+  //   }
+  // }, [navigate]);
 
   useEffect(() => {
-    const jwt = localStorage.getItem("jwt");
-    if (!jwt) {
-      navigate("/");
-    }
+    const fetchSites = async () => {
+      try {
+        const userSites = await getUserSites();
+        setSites(userSites);
+        if (userSites.length > 0) {
+          navigate(`/dashboard/${userSites[0]}`);
+        }
+      } catch (error) {
+        console.error("Failed to fetch user sites:", error);
+      }
+    };
+
+    fetchSites();
   }, [navigate]);
 
   return (
-    <div className="flex flex-col h-screen">
-      <header className="p-4 bg-gray-800 text-white">
-        <h1 className="text-xl font-semibold">Dashboard</h1>
-      </header>
-      <main className="flex-1 p-4">
-        <Routes>
-          <Route path="settings" element={<DashboardSettings />} />
-        </Routes>
-        <Outlet />
-      </main>
+    <div className="bg-white flex flex-col w-full min-h-screen">
+      <Navbar />
+      <div className="flex w-full flex-1">
+        <Sidebar sites={sites} />
+        <Main />
+      </div>
     </div>
   );
 };

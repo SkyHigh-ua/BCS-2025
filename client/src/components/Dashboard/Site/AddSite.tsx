@@ -10,24 +10,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/ui/select";
+import { Check } from "lucide-react";
 import { fetchDefaultPlugins } from "@/services/pluginService";
+import { fetchDefaultModules } from "@/services/moduleService";
 
-const AddSiteForm: React.FC<{
-  onNext: () => void;
-  onBack: () => void;
-  onUpdate: (data: {
-    url: string;
-    name: string;
-    monitoringType: string;
-  }) => void;
-  initialData: { url: string; name: string; monitoringType: string };
-}> = ({ onNext, onBack, onUpdate, initialData }) => {
-  const [url, setUrl] = useState(initialData.url);
-  const [name, setName] = useState(initialData.name);
-  const [monitoringType, setMonitoringType] = useState(
-    initialData.monitoringType
-  );
+export default function AddSite(): JSX.Element {
+  const [url, setUrl] = useState("");
+  const [name, setName] = useState("");
+  const [monitoringType, setMonitoringType] = useState("none");
+  const [selectedModules, setSelectedModules] = useState<string[]>([]);
   const [plugins, setPlugins] = useState<{ id: string; name: string }[]>([]);
+  const [monitoringOptions, setMonitoringOptions] = useState<
+    { id: string; name: string }[]
+  >([]);
 
   useEffect(() => {
     const loadDefaultPlugins = async () => {
@@ -43,12 +38,39 @@ const AddSiteForm: React.FC<{
         console.error("Error fetching default plugins:", error);
       }
     };
+
+    const loadDefaultModules = async () => {
+      try {
+        const modules = await fetchDefaultModules();
+        setMonitoringOptions(
+          modules.map((module: any) => ({ id: module.id, name: module.name }))
+        );
+      } catch (error) {
+        console.error("Error fetching default modules:", error);
+      }
+    };
+
     loadDefaultPlugins();
+    loadDefaultModules();
   }, []);
 
-  const handleNext = () => {
-    onUpdate({ url, name, monitoringType });
-    onNext();
+  const toggleModule = (moduleName: string) => {
+    setSelectedModules((prev) =>
+      prev.includes(moduleName)
+        ? prev.filter((name) => name !== moduleName)
+        : [...prev, moduleName]
+    );
+  };
+
+  const handleSubmit = () => {
+    const formData = {
+      url,
+      name,
+      monitoringType,
+      selectedModules,
+    };
+    console.log("Form Data Submitted:", formData);
+    // Add your submission logic here
   };
 
   return (
@@ -106,14 +128,37 @@ const AddSiteForm: React.FC<{
           </SelectContent>
         </Select>
       </div>
-      <div className="flex justify-between">
-        <Button variant="outline" onClick={onBack}>
-          Back
-        </Button>
-        <Button onClick={handleNext}>Continue</Button>
+      <div className="space-y-4">
+        <p className="text-sm text-center text-shadcn-ui-app-muted-foreground font-text-sm-leading-5-normal">
+          What do you want to monitor?
+        </p>
+        <div className="grid grid-cols-2 gap-4">
+          {monitoringOptions.map((option) => (
+            <Button
+              key={option.id}
+              variant={
+                selectedModules.includes(option.name) ? "default" : "secondary"
+              }
+              className={`w-full gap-2 px-4 py-2 ${
+                selectedModules.includes(option.name)
+                  ? "bg-slate-900"
+                  : "bg-slate-400"
+              }`}
+              onClick={() => toggleModule(option.name)}
+            >
+              {selectedModules.includes(option.name) && (
+                <Check className="w-[22px] h-[22px] text-white" />
+              )}
+              <span className="font-medium text-white text-sm leading-6">
+                {option.name}
+              </span>
+            </Button>
+          ))}
+        </div>
       </div>
+      <Button className="w-full" onClick={handleSubmit}>
+        Submit
+      </Button>
     </CardContent>
   );
-};
-
-export default AddSiteForm;
+}
