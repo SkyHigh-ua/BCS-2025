@@ -1,3 +1,4 @@
+import React from "react";
 import { Avatar, AvatarFallback } from "@/ui/avatar";
 import { Button } from "@/ui/button";
 import {
@@ -6,7 +7,6 @@ import {
   HelpCircleIcon,
   UserIcon,
 } from "lucide-react";
-import React from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,8 +14,9 @@ import {
   DropdownMenuTrigger,
 } from "@/ui/dropdown-menu";
 import { useNavigate } from "react-router-dom";
+import { User } from "@/models/User";
 
-export const Navbar = (): JSX.Element => {
+export const Navbar = ({ user }: { user: User | null }): JSX.Element => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -75,13 +76,23 @@ export const Navbar = (): JSX.Element => {
                 className="flex items-center gap-3 cursor-pointer"
               >
                 <Avatar className="h-9 w-9">
-                  <AvatarFallback className="bg-secondary">
-                    <UserIcon className="h-4 w-4" />
-                  </AvatarFallback>
+                  {user?.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt="User Avatar"
+                      className="h-full w-full rounded-full"
+                    />
+                  ) : (
+                    <AvatarFallback className="bg-secondary">
+                      <UserIcon className="h-4 w-4" />
+                    </AvatarFallback>
+                  )}
                 </Avatar>
 
                 <div className="flex items-center gap-1">
-                  <span className="text-sm font-medium">Anthony</span>
+                  <span className="text-sm font-medium">
+                    {user ? `${user.firstName} ${user.lastName}` : "Loading..."}
+                  </span>
                   <ChevronDownIcon className="h-4 w-4 text-foreground" />
                 </div>
               </Button>

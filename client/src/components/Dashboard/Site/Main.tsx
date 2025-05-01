@@ -1,5 +1,4 @@
 import React from "react";
-import { Card, CardHeader, CardContent } from "@/ui/card";
 import Widget from "@/components/Widget/Widget";
 
 const widgets = [
@@ -12,12 +11,7 @@ export function Main(): JSX.Element {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {widgets.map((widget) => (
-        <Card key={widget.id}>
-          <CardHeader>{widget.title}</CardHeader>
-          <CardContent>
-            <Widget id={widget.id} content={widget.content} />
-          </CardContent>
-        </Card>
+        <Widget id={widget.id} content={widget.content} />
       ))}
     </div>
   );

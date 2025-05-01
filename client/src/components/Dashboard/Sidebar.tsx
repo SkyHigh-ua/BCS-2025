@@ -30,7 +30,7 @@ import {
 } from "@/ui/dropdown-menu";
 import { Input } from "@/ui/input";
 
-export function Sidebar(): JSX.Element {
+export function Sidebar({ sites }: { sites: string[] }): JSX.Element {
   const [selectedSite, setSelectedSite] = useState("sitetest1.com");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(244);
@@ -71,7 +71,6 @@ export function Sidebar(): JSX.Element {
     { icon: <BookOpen className="w-4 h-4" />, label: "Reports" },
   ];
 
-  const sites = ["sitetest1.com", "sitetest2.com", "sitetest3.com"];
   const [searchQuery, setSearchQuery] = useState("");
 
   const filteredSites = sites.filter((site) =>
