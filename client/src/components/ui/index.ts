@@ -9,7 +9,7 @@ export * from "./input";
 export * from "./label";
 export * from "./navigation-menu";
 export * from "./popover";
-export * from "./progressBar";
+export * from "./progress-bar";
 export * from "./scroll-area";
 export * from "./select";
 export * from "./separator";

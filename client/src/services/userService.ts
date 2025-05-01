@@ -24,3 +24,18 @@ export const deleteUser = async (userId: string) => {
   const response = await axios.delete(`${API_BASE_URL}/user/${userId}`);
   return response.data;
 };
+
+export const getUserData = async () => {
+  const jwt = localStorage.getItem("jwt");
+  if (!jwt) throw new Error("JWT not found");
+
+  const response = await fetch("/api/user", {
+    headers: { Authorization: `Bearer ${jwt}` },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch user data");
+  }
+
+  return response.json();
+};

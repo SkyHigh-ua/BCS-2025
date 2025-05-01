@@ -3,6 +3,7 @@ import { Card, CardHeader, CardContent } from "@/ui/card";
 import { getModuleById } from "@/services/moduleService";
 import StringToReactComponent from "string-to-react-component";
 import * as UIComponents from "@/ui/index";
+import { LoaderCircle } from "lucide-react";
 
 interface WidgetProps {
   moduleId: string;
@@ -32,11 +33,18 @@ export default function Widget({ moduleId }: WidgetProps): JSX.Element {
   }, [moduleId]);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <Card className="flex flex-col p-4">
+        <LoaderCircle />
+        Loading...
+      </Card>
+    );
   }
 
   if (error) {
-    return <div>Error: {error}</div>;
+    return (
+      <Card className="text-amber-500 border-red-500 p-4">Error: {error}</Card>
+    );
   }
 
   return (

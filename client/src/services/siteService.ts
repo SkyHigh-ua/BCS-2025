@@ -46,8 +46,16 @@ export const deleteSite = async (siteId: string) => {
 };
 
 export const getUserSites = async () => {
-  const response = await axios.get(`${API_BASE_URL}/site/my-sites`, {
-    headers: getAuthHeaders(),
+  const jwt = localStorage.getItem("jwt");
+  if (!jwt) throw new Error("JWT not found");
+
+  const response = await fetch("/api/sites", {
+    headers: { Authorization: `Bearer ${jwt}` },
   });
-  return response.data;
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch user sites");
+  }
+
+  return response.json();
 };

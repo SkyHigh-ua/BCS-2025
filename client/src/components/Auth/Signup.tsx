@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Card } from "@/ui/card";
-import ProgressBar from "@/ui/progressBar";
+import ProgressBar from "@/ui/progress-bar";
 import RegistrationForm from "@/components/Auth/Stages/RegistrationForm";
 import PersonalInfoForm from "@/components/Auth/Stages/PersonalInfoForm";
 import AddSiteForm from "@/components/Auth/Stages/AddSiteForm";
