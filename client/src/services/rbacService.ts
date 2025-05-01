@@ -81,3 +81,17 @@ export const assignGroupToSite = async (
   );
   return response.data;
 };
+
+export const getUserOwnedGroups = async (userId: string): Promise<Group[]> => {
+  const response = await axios.get(`${API_BASE_URL}/groups/user/${userId}`, {
+    headers: getAuthHeaders(),
+  });
+  return response.data;
+};
+
+export const getGroupUsers = async (groupId: string): Promise<any[]> => {
+  const response = await axios.get(`${API_BASE_URL}/groups/${groupId}/users`, {
+    headers: getAuthHeaders(),
+  });
+  return response.data;
+};

@@ -13,16 +13,19 @@ import {
 import { Check } from "lucide-react";
 import { fetchDefaultPlugins } from "@/services/pluginService";
 import { fetchDefaultModules } from "@/services/moduleService";
+import { createSite } from "@/services/siteService";
+import { useNavigate } from "react-router-dom";
 
 export default function AddSite(): JSX.Element {
-  const [url, setUrl] = useState("");
-  const [name, setName] = useState("");
-  const [monitoringType, setMonitoringType] = useState("none");
-  const [selectedModules, setSelectedModules] = useState<string[]>([]);
+  const navigate = useNavigate();
+  const [formState, setFormState] = useState({
+    url: "",
+    name: "",
+    plugin: "none",
+    selectedModules: [] as string[],
+  });
   const [plugins, setPlugins] = useState<{ id: string; name: string }[]>([]);
-  const [monitoringOptions, setMonitoringOptions] = useState<
-    { id: string; name: string }[]
-  >([]);
+  const [modules, setModules] = useState<{ id: string; name: string }[]>([]);
 
   useEffect(() => {
     const loadDefaultPlugins = async () => {
@@ -41,9 +44,12 @@ export default function AddSite(): JSX.Element {
 
     const loadDefaultModules = async () => {
       try {
-        const modules = await fetchDefaultModules();
-        setMonitoringOptions(
-          modules.map((module: any) => ({ id: module.id, name: module.name }))
+        const modulesData = await fetchDefaultModules();
+        setModules(
+          modulesData.map((module: any) => ({
+            id: module.id,
+            name: module.name,
+          }))
         );
       } catch (error) {
         console.error("Error fetching default modules:", error);
@@ -55,22 +61,35 @@ export default function AddSite(): JSX.Element {
   }, []);
 
   const toggleModule = (moduleName: string) => {
-    setSelectedModules((prev) =>
-      prev.includes(moduleName)
-        ? prev.filter((name) => name !== moduleName)
-        : [...prev, moduleName]
-    );
+    setFormState((prev) => ({
+      ...prev,
+      selectedModules: prev.selectedModules.includes(moduleName)
+        ? prev.selectedModules.filter((name) => name !== moduleName)
+        : [...prev.selectedModules, moduleName],
+    }));
   };
 
-  const handleSubmit = () => {
-    const formData = {
-      url,
-      name,
-      monitoringType,
-      selectedModules,
-    };
-    console.log("Form Data Submitted:", formData);
-    // Add your submission logic here
+  const handleChange = (field: string, value: string) => {
+    setFormState((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleSubmit = async () => {
+    try {
+      const { url, name, plugin, selectedModules } = formState;
+      const formData = {
+        url,
+        name,
+        monitoringType: plugin,
+        selectedModules,
+      };
+      const newSite = await createSite(formData);
+      navigate(`/sites/${newSite.name}`);
+    } catch (error) {
+      console.error("Error creating site:", error);
+    }
   };
 
   return (
@@ -87,8 +106,8 @@ export default function AddSite(): JSX.Element {
           id="url"
           placeholder="https://example.com"
           className="w-full text-slate-400 placeholder:text-slate-400 text-black"
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
+          value={formState.url}
+          onChange={(e) => handleChange("url", e.target.value)}
         />
         <Label
           htmlFor="name"
@@ -100,8 +119,8 @@ export default function AddSite(): JSX.Element {
           id="name"
           placeholder="Acme Inc"
           className="w-full text-slate-400 placeholder:text-slate-400 text-black"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
+          value={formState.name}
+          onChange={(e) => handleChange("name", e.target.value)}
         />
         <Label
           htmlFor="monitoringType"
@@ -110,8 +129,8 @@ export default function AddSite(): JSX.Element {
           Monitoring Type
         </Label>
         <Select
-          value={monitoringType}
-          onValueChange={(value) => setMonitoringType(value)}
+          value={formState.plugin}
+          onValueChange={(value) => handleChange("plugin", value)}
         >
           <SelectTrigger className="w-full">
             <SelectValue placeholder="Select a plugin" />
@@ -133,24 +152,26 @@ export default function AddSite(): JSX.Element {
           What do you want to monitor?
         </p>
         <div className="grid grid-cols-2 gap-4">
-          {monitoringOptions.map((option) => (
+          {modules.map((module) => (
             <Button
-              key={option.id}
+              key={module.id}
               variant={
-                selectedModules.includes(option.name) ? "default" : "secondary"
+                formState.selectedModules.includes(module.name)
+                  ? "default"
+                  : "secondary"
               }
               className={`w-full gap-2 px-4 py-2 ${
-                selectedModules.includes(option.name)
+                formState.selectedModules.includes(module.name)
                   ? "bg-slate-900"
                   : "bg-slate-400"
               }`}
-              onClick={() => toggleModule(option.name)}
+              onClick={() => toggleModule(module.name)}
             >
-              {selectedModules.includes(option.name) && (
+              {formState.selectedModules.includes(module.name) && (
                 <Check className="w-[22px] h-[22px] text-white" />
               )}
               <span className="font-medium text-white text-sm leading-6">
-                {option.name}
+                {module.name}
               </span>
             </Button>
           ))}

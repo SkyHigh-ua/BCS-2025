@@ -1,12 +1,22 @@
 import { Card, CardContent } from "@/components/ui/card";
 import React from "react";
-import { Routes, Route, useNavigate } from "react-router-dom"; // Added useNavigate
+import { Routes, Route, useNavigate } from "react-router-dom";
 import { Separator } from "@/components/ui/separator";
 import Profile from "./Profile";
 import Teams from "./Teams";
 import { Button } from "../../ui/button";
+import { Site } from "@/models/Site";
+import { User } from "@/models/User";
 
-export default function SettingsMain(): JSX.Element {
+export default function SettingsMain({
+  user,
+  setUser,
+  sites,
+}: {
+  user: User;
+  setUser: React.Dispatch<React.SetStateAction<User>>;
+  sites: Site[];
+}): JSX.Element {
   const navigate = useNavigate();
 
   return (
@@ -40,8 +50,14 @@ export default function SettingsMain(): JSX.Element {
             </Button>
           </nav>
           <Routes>
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/teams" element={<Teams />} />
+            <Route
+              path="/profile"
+              element={<Profile user={user} setUser={setUser} />}
+            />
+            <Route
+              path="/teams"
+              element={<Teams userId={user.id} sites={sites} />}
+            />
           </Routes>
         </div>
       </CardContent>

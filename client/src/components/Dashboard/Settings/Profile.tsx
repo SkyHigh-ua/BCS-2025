@@ -11,15 +11,15 @@ import { Label } from "@/ui/label";
 import { Button } from "@/ui/button";
 import { Separator } from "@/ui/separator";
 import { getUserData, updateUser } from "@/services/userService";
+import { User } from "@/models/User";
 
-export default function Profile(): JSX.Element {
-  const [user, setUser] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    avatar: "",
-  });
-
+export default function Profile({
+  user,
+  setUser,
+}: {
+  user: User;
+  setUser: React.Dispatch<React.SetStateAction<User>>;
+}): JSX.Element {
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",

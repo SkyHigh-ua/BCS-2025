@@ -2,8 +2,10 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { Site } from "@/models/Site";
 
-export default function Widgets(): JSX.Element {
+// TODO: add the actual widget logic
+export default function Widgets({ site }: { site: Site }): JSX.Element {
   // Feature card data for mapping
   const featureCards = [
     {

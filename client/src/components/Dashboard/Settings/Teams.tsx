@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -36,63 +36,102 @@ import {
   Trash2Icon,
   UserIcon,
 } from "lucide-react";
+import {
+  getUserOwnedGroups,
+  getGroupUsers,
+  getSitesForGroup,
+  assignSiteToGroup,
+  removeSiteFromGroup,
+} from "@/services/rbacService";
+import { Site } from "@/models/Site";
+import { Group } from "@/models/Group";
+import { Role } from "@/models/Role";
 
-export default function Teams(): JSX.Element {
-  // Teams data
-  const teams = [
-    { name: "Administration", icon: "team" },
-    { name: "DevOps", icon: "team" },
-    { name: "SEO Specialists", icon: "team" },
-    { name: "Accountant", icon: "team" },
-    { name: "Web developer", icon: "team" },
-    { name: "Web analytics", icon: "team" },
-  ];
-
-  // Members data
-  const members = [
-    {
-      name: "Anthony",
-      email: "m@example.com",
-      role: "Owner",
-      isEditable: false,
-    },
-    {
-      name: "Jackson Lee",
-      email: "p@example.com",
-      role: "Manager",
-      isEditable: true,
-    },
-    {
-      name: "Jackson Lee",
-      email: "p@example.com",
-      role: "Manager",
-      isEditable: true,
-    },
-  ];
-
-  // Sites data
-  const sites = [
-    { name: "sitetest.com", checked: false },
-    { name: "sitetest2.com", checked: true },
-    { name: "site-test.com", checked: false },
-    { name: "site-test4.com", checked: false },
-  ];
-
+export default function Teams({
+  userId,
+  sites,
+}: {
+  userId: string;
+  sites: Site[];
+}): JSX.Element {
+  const [teams, setTeams] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [siteStates, setSiteStates] = useState(
-    sites.map((site) => ({ ...site }))
-  );
+  const [selectedTeam, setSelectedTeam] = useState("");
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteTeam, setInviteTeam] = useState("");
+  const [inviteRole, setInviteRole] = useState("viewer");
+  const [inviteMessage, setInviteMessage] = useState("");
 
-  const filteredSites = siteStates.filter((site) =>
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const userTeams = await getUserOwnedGroups(userId);
+
+        const teamsWithDetails = await Promise.all(
+          userTeams.map(async (team: Group) => {
+            const teamMembers = await getGroupUsers(team.id);
+            const sitesWithChecked = await getSitesForGroup(team.id);
+
+            return { ...team, members: teamMembers, sites: sitesWithChecked };
+          })
+        );
+
+        setTeams(teamsWithDetails);
+      } catch (error) {
+        console.error("Failed to fetch data:", error);
+      }
+    };
+
+    fetchData();
+  }, [userId]);
+
+  const filteredSites = sites.filter((site: Site) =>
     site.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const toggleCheckbox = (index: number) => {
-    setSiteStates((prev) =>
-      prev.map((site, i) =>
-        i === index ? { ...site, checked: !site.checked } : site
+  const toggleCheckbox = async (teamId: string, siteId: string) => {
+    const team = teams.find((team) => team.id === teamId);
+    const siteExists = team?.sites.some((site) => site.id === siteId);
+
+    if (!siteExists) {
+      try {
+        await assignSiteToGroup(teamId, siteId);
+      } catch (error) {
+        console.error("Failed to assign site to group:", error);
+        return;
+      }
+    } else {
+      try {
+        await removeSiteFromGroup(teamId, siteId);
+      } catch (error) {
+        console.error("Failed to remove site from group:", error);
+        return;
+      }
+    }
+
+    setTeams((prev) =>
+      prev.map((team) =>
+        team.id === teamId
+          ? {
+              ...team,
+              sites: team.sites.some((site) => site.id === siteId)
+                ? team.sites.filter((site) => site.id !== siteId)
+                : [...team.sites, sites.find((site) => site.id === siteId)!],
+            }
+          : team
       )
     );
+  };
+
+  const handleSendInvitation = () => {
+    const invitationData = {
+      email: inviteEmail,
+      team: inviteTeam,
+      role: inviteRole,
+      message: inviteMessage,
+    };
+
+    // TODO: Implement the logic to send the invitation
   };
 
   return (
@@ -101,8 +140,7 @@ export default function Teams(): JSX.Element {
         <CardTitle>Company</CardTitle>
         <CardDescription>
           This is your organization's main workspace. Manage company-wide
-          settings <br />
-          and overall access.
+          settings and overall access.
         </CardDescription>
       </CardHeader>
 
@@ -122,8 +160,14 @@ export default function Teams(): JSX.Element {
         </CardHeader>
         <CardContent className="pb-6">
           <div className="flex flex-col gap-4">
-            {teams.map((team, index) => (
-              <div key={index} className="flex items-center justify-between">
+            {teams.map((team: Group, index) => (
+              <div
+                key={index}
+                className={`flex items-center justify-between ${
+                  selectedTeam?.id === team.id ? "border border-primary" : ""
+                } rounded-md p-2 cursor-pointer`}
+                onClick={() => setSelectedTeam(team)}
+              >
                 <div className="flex items-center gap-3 flex-1">
                   <div className="w-9 h-9 bg-slate-300 rounded-full flex items-center justify-center">
                     <div className="w-4 h-4" />
@@ -163,16 +207,18 @@ export default function Teams(): JSX.Element {
                           />
                         </div>
                         <div className="p-2">
-                          {filteredSites.map((site, siteIndex) => (
+                          {filteredSites.map((site: Site, siteIndex) => (
                             <div
                               key={siteIndex}
                               className="flex items-center gap-2 p-2 rounded-md hover:bg-accent"
                             >
                               <Checkbox
                                 id={`site-${siteIndex}`}
-                                checked={site.checked}
+                                checked={team.sites.some(
+                                  (teamSite) => teamSite.id === site.id
+                                )}
                                 onCheckedChange={() =>
-                                  toggleCheckbox(siteIndex)
+                                  toggleCheckbox(team.id, site.id)
                                 }
                               />
                               <label
@@ -198,76 +244,78 @@ export default function Teams(): JSX.Element {
       </Card>
 
       {/* Members card */}
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle>Members</CardTitle>
-          <CardDescription>
-            Members are users with access to specific teams. Assign roles to
-            control their level of access and permissions.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="pb-6">
-          <div className="flex flex-col gap-4">
-            {members.map((member, index) => (
-              <div key={index} className="flex items-center justify-between">
-                <div className="flex items-center gap-3 flex-1">
-                  <div className="w-9 h-9 bg-secondary rounded-full flex items-center justify-center">
-                    <UserIcon className="w-4 h-4" />
-                  </div>
-                  <div className="flex flex-col">
-                    <div className="font-medium text-foreground">
-                      {member.name}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {member.email}
-                    </div>
-                  </div>
-                </div>
-
-                {!member.isEditable ? (
-                  <div className="w-[131px] opacity-50">
-                    <div className="flex items-center gap-3 px-3 py-2 bg-background rounded-md border-border">
-                      <div className="flex-1 text-sm text-foreground">
-                        {member.role}
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <Select defaultValue={member.role}>
-                      <SelectTrigger className="w-[139px]">
-                        <SelectValue placeholder="Select role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Owner">Owner</SelectItem>
-                        <SelectItem value="Manager">Manager</SelectItem>
-                        <SelectItem value="Viewer">Viewer</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="w-12 h-9"
-                        >
-                          <MoreHorizontalIcon className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem>Edit</DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-500">
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </>
-                )}
+      {selectedTeam && (
+        <Card className="w-full"></Card>
+          <CardHeader>
+        <CardTitle>Members</CardTitle>
+        <CardDescription>
+          Members are users with access to the selected team. Assign roles
+          to control their level of access and permissions.
+        </CardDescription>
+          </CardHeader>
+          <CardContent className="pb-6">
+        <div className="flex flex-col gap-4">
+          {selectedTeam.members.map((member, index) => (
+            <div key={index} className="flex items-center justify-between">
+          <div className="flex items-center gap-3 flex-1">
+            <div className="w-9 h-9 bg-secondary rounded-full flex items-center justify-center">
+              <UserIcon className="w-4 h-4" />
+            </div>
+            <div className="flex flex-col">
+              <div className="font-medium text-foreground">
+            {member.name}
               </div>
-            ))}
+              <div className="text-sm text-muted-foreground">
+            {member.email}
+              </div>
+            </div>
           </div>
-        </CardContent>
-      </Card>
+
+          {!member.isEditable ? (
+            <div className="w-[131px] opacity-50">
+              <div className="flex items-center gap-3 px-3 py-2 bg-background rounded-md border-border">
+            <div className="flex-1 text-sm text-foreground">
+              {member.role}
+            </div>
+              </div>
+            </div>
+          ) : (
+            <>
+              <Select defaultValue={member.role}>
+            <SelectTrigger className="w-[139px]">
+              <SelectValue placeholder="Select role" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Owner">Owner</SelectItem>
+              <SelectItem value="Manager">Manager</SelectItem>
+              <SelectItem value="Viewer">Viewer</SelectItem>
+            </SelectContent>
+              </Select>
+              <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="w-12 h-9"
+              >
+                <MoreHorizontalIcon className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem>Edit</DropdownMenuItem>
+              <DropdownMenuItem className="text-red-500">
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+              </DropdownMenu>
+            </>
+          )}
+            </div>
+          ))}
+        </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Invite user card */}
       <Card id="invite-card" className="w-full">
@@ -285,7 +333,11 @@ export default function Teams(): JSX.Element {
               <label className="font-medium text-sm text-slate-900">
                 Email
               </label>
-              <Input defaultValue="test@test.com" placeholder="Email address" />
+              <Input
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                placeholder="Email address"
+              />
             </div>
 
             {/* Assign Team field */}
@@ -293,7 +345,10 @@ export default function Teams(): JSX.Element {
               <label className="font-medium text-sm text-slate-900">
                 Assign Team
               </label>
-              <Select>
+              <Select
+                value={inviteTeam}
+                onValueChange={(value) => setInviteTeam(value)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select Team" />
                 </SelectTrigger>
@@ -315,7 +370,10 @@ export default function Teams(): JSX.Element {
               <label className="font-medium text-sm text-slate-900">
                 Assign Role
               </label>
-              <Select defaultValue="viewer">
+              <Select
+                value={inviteRole}
+                onValueChange={(value) => setInviteRole(value)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
@@ -339,10 +397,12 @@ export default function Teams(): JSX.Element {
                 Message (optional)
               </label>
               <Textarea
+                value={inviteMessage}
+                onChange={(e) => setInviteMessage(e.target.value)}
                 placeholder="Type your message here"
                 className="h-20 resize-none"
               />
-              <Button>Send Invitation</Button>
+              <Button onClick={handleSendInvitation}>Send Invitation</Button>
             </div>
           </div>
         </CardContent>

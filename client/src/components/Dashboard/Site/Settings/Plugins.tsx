@@ -18,25 +18,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/ui/select";
+import { Site } from "@/models/Site";
 
-export default function Plugins(): JSX.Element {
-  const dangerActions = [
-    {
-      title: "Disconnect Site",
-      description:
-        "Temporarily disable the connection between this website and the monitoring platform. No data will be collected until reconnected.",
-      action: "toggle",
-    },
-    {
-      title: "Delete Site",
-      description:
-        "Permanently remove this website and all its associated data from your account.",
-      warning: "This action cannot be undone.",
-      action: "button",
-      buttonText: "Delete Site Permanently",
-    },
-  ];
-
+// TODO: add the actual plugin logic
+export default function Plugins({ site }: { site: Site }): JSX.Element {
   // Data for the form fields
   const formData = {
     urlOptions: [
@@ -171,47 +156,6 @@ export default function Plugins(): JSX.Element {
         <CardFooter>
           <Button className="w-[135px] h-9">Connect Site</Button>
         </CardFooter>
-      </Card>
-      <Card className="border-red-500 shadow-sm">
-        <CardHeader className="pb-0">
-          <CardTitle className="text-md font-medium">Danger Zone</CardTitle>
-          <CardDescription>
-            Actions below are irreversible. Please proceed with caution.
-          </CardDescription>
-        </CardHeader>
-
-        <CardContent className="flex flex-col gap-2.5 pt-6">
-          {dangerActions.map((action, index) => (
-            <div
-              key={index}
-              className="flex items-center justify-between p-4 rounded-lg border"
-            >
-              <div className="flex flex-col gap-1.5 max-w-[420px]">
-                <h3 className="text-sm font-medium">{action.title}</h3>
-                <p className="text-sm text-muted-foreground">
-                  {action.description}
-                  {action.warning && (
-                    <>
-                      <br />
-                      <span className="flex items-center gap-1 mt-1">
-                        <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
-                        {action.warning}
-                      </span>
-                    </>
-                  )}
-                </p>
-              </div>
-
-              {action.action === "toggle" ? (
-                <Switch aria-label={`Toggle ${action.title}`} />
-              ) : (
-                <Button variant="destructive" className="whitespace-nowrap">
-                  {action.buttonText}
-                </Button>
-              )}
-            </div>
-          ))}
-        </CardContent>
       </Card>
     </div>
   );

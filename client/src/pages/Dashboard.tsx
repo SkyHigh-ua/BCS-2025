@@ -5,13 +5,13 @@ import { Navbar } from "@/components/Dashboard/Navbar";
 import { Sidebar } from "@/components/Dashboard/Sidebar";
 import { getUserSites } from "@/services/siteService";
 import { getUserData } from "@/services/userService";
+import { User } from "@/models/User";
+import { Site } from "@/models/Site";
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const [dashboardData, setDashboardData] = useState<{
-    user: { firstName: string; lastName: string; avatar: string } | null;
-    sites: string[];
-  }>({ user: null, sites: [] });
+  const [user, setUser] = useState<User | null>(null);
+  const [sites, setSites] = useState<Site[]>([]);
 
   useEffect(() => {
     const jwt = localStorage.getItem("jwt");
@@ -26,9 +26,12 @@ const Dashboard: React.FC = () => {
           getUserData(),
           getUserSites(),
         ]);
-        setDashboardData({ user: userData, sites: userSites });
+        setUser(userData);
+        setSites(userSites);
         if (userSites.length > 0) {
           navigate(`/dashboard/${userSites[0]}`);
+        } else {
+          navigate("/dashboard/add-site");
         }
       } catch (error) {
         console.error("Failed to fetch dashboard data:", error);
@@ -40,10 +43,10 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="bg-white flex flex-col w-full min-h-screen">
-      <Navbar user={dashboardData.user} />
+      <Navbar user={user} />
       <div className="flex w-full flex-1">
-        <Sidebar sites={dashboardData.sites} />
-        <Main sites={dashboardData.sites} />
+        <Sidebar user={user} setUser={setUser} sites={sites} />
+        <Main sites={sites} />
       </div>
     </div>
   );

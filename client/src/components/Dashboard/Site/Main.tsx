@@ -7,6 +7,7 @@ const widgets = [
   { id: 3, title: "Widget 3", content: "Content for Widget 3" },
 ];
 
+// TODO: Replace with actual widget data
 export function Main(): JSX.Element {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
