@@ -19,28 +19,46 @@ import {
   SelectValue,
 } from "@/ui/select";
 import { Site } from "@/models/Site";
+import { useEffect, useState } from "react";
+import { fetchSitePlugin } from "@/services/pluginService";
 
-// TODO: add the actual plugin logic
 export default function Plugins({ site }: { site: Site }): JSX.Element {
-  // Data for the form fields
-  const formData = {
-    urlOptions: [
-      {
-        value: "https://site.com/wp-admin/",
-        label: "https://site.com/wp-admin/",
-      },
-    ],
-    username: "admin",
-    apiKey: "q3QSd85Wdq2h835Et12U3t5dt",
-  };
+  const [formData, setFormData] = useState<
+    { type: string; params?: any; datatype: string; value: any }[]
+  >([]);
+  const [installationSteps, setInstallationSteps] = useState<string[]>([]);
+  const [pluginName, setPluginName] = useState<string>("");
+  const [pluginDownloadUrl, setPluginDownloadUrl] = useState<string>("");
 
-  const installationSteps = [
-    "Go to your WordPress Admin Panel.",
-    "Navigate to Plugins → Add New.",
-    "Click Upload Plugin, choose the downloaded .zip file, and click Install Now.",
-    "After installation, click Activate Plugin.",
-    "Open the plugin settings to complete the connection.",
-  ];
+  useEffect(() => {
+    async function loadPluginData() {
+      try {
+        const plugin = await fetchSitePlugin(site.id);
+        setPluginName(plugin.name);
+        setPluginDownloadUrl(plugin.downloadUrl);
+        setFormData(
+          plugin.fields.map((field: any) => ({
+            type: field.type,
+            params: field.params,
+            datatype: field.datatype,
+            value: field.value || "",
+          }))
+        );
+        setInstallationSteps(plugin.readme.split("\n"));
+      } catch (error) {
+        console.error("Failed to fetch plugin data:", error);
+      }
+    }
+    loadPluginData();
+  }, [site.id]);
+
+  const handleDownload = () => {
+    if (pluginDownloadUrl) {
+      window.open(pluginDownloadUrl, "_blank");
+    } else {
+      console.error("Download URL is not available.");
+    }
+  };
 
   return (
     <div
@@ -59,7 +77,7 @@ export default function Plugins({ site }: { site: Site }): JSX.Element {
         <CardContent className="flex items-start justify-between p-6">
           <div className="flex flex-col gap-1.5">
             <p className="text-base font-medium">
-              Detected CMS: <span className="text-[#2f80ed]">WordPress</span>
+              Detected CMS: <span className="text-[#2f80ed]">{pluginName}</span>
             </p>
             <p className="text-sm text-muted-foreground max-w-[380px]">
               To connect your site, install our official plugin and follow the
@@ -74,11 +92,11 @@ export default function Plugins({ site }: { site: Site }): JSX.Element {
           <div className="space-y-1.5">
             <h3 className="font-medium text-foreground">Download Plugin</h3>
             <p className="text-sm text-muted-foreground">
-              Get the latest version of our WordPress plugin to enable seamless
-              integration and monitoring.
+              Get the latest version of our {pluginName} plugin to enable
+              seamless integration and monitoring.
             </p>
           </div>
-          <Button className="flex items-center gap-2">
+          <Button className="flex items-center gap-2" onClick={handleDownload}>
             <DownloadIcon className="h-4 w-4" />
             <span>Download Plugin</span>
           </Button>
@@ -112,45 +130,40 @@ export default function Plugins({ site }: { site: Site }): JSX.Element {
         </CardHeader>
 
         <CardContent className="space-y-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1 space-y-1.5">
-              <Label htmlFor="url-admin">URL admin panel</Label>
-              <Select defaultValue={formData.urlOptions[0].value}>
-                <SelectTrigger id="url-admin" className="h-[42px]">
-                  <SelectValue placeholder="Select URL" />
-                </SelectTrigger>
-                <SelectContent>
-                  {formData.urlOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          {formData.map((field, index) => (
+            <div key={index} className="space-y-1.5">
+              <Label htmlFor={index}>{field.params?.label || index}</Label>
+              {field.type === "input" && (
+                <Input
+                  id={index}
+                  placeholder={field.params?.placeholder || ""}
+                  defaultValue={field.value}
+                  className="h-[42px]"
+                />
+              )}
+              {field.type === "select" && (
+                <Select defaultValue={field.value}>
+                  <SelectTrigger id={index} className="h-[42px]">
+                    <SelectValue
+                      placeholder={field.params?.placeholder || ""}
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {field.params?.options?.map((option: any) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              {field.type === "button" && (
+                <Button className={field.params?.className || ""}>
+                  {field.params?.label || "Button"}
+                </Button>
+              )}
             </div>
-
-            <div className="flex-1 space-y-1.5">
-              <Label htmlFor="admin-username">Admin Username</Label>
-              <Input
-                id="admin-username"
-                defaultValue={formData.username}
-                className="h-[42px]"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="api-key">Site ID / API Key</Label>
-            <Input
-              id="api-key"
-              defaultValue={formData.apiKey}
-              className="h-[42px] text-muted-foreground"
-            />
-            <p className="text-sm text-muted-foreground mt-2.5">
-              Your credentials are securely stored and encrypted. We never
-              access or modify your site&apos;s content.
-            </p>
-          </div>
+          ))}
         </CardContent>
 
         <CardFooter>

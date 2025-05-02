@@ -69,3 +69,10 @@ export const assignPluginToSite = async (
   );
   return response.data;
 };
+
+export const fetchSitePlugin = async (siteId: string): Promise<any> => {
+  const response = await axios.get(`${API_BASE_URL}/plugins/site/${siteId}`, {
+    headers: getAuthHeaders(),
+  });
+  return response.data;
+};

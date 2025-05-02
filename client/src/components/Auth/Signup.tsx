@@ -11,7 +11,6 @@ import { createSite } from "@/services/siteService";
 import { assignModules } from "@/services/moduleService";
 import { assignPluginToSite } from "../../services/pluginService";
 
-// TODO: add sub-user first signin
 const Signup: React.FC = () => {
   const [stage, setStage] = useState(1);
   const navigate = useNavigate();

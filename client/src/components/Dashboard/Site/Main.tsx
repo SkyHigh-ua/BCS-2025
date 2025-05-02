@@ -1,18 +1,29 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Widget from "@/components/Widget/Widget";
+import { getModulesBySiteId } from "@/services/moduleService";
 
-const widgets = [
-  { id: 1, title: "Widget 1", content: "Content for Widget 1" },
-  { id: 2, title: "Widget 2", content: "Content for Widget 2" },
-  { id: 3, title: "Widget 3", content: "Content for Widget 3" },
-];
+export function Main({ siteId }: { siteId: string }): JSX.Element {
+  const [widgets, setWidgets] = useState<
+    { id: number; title: string; content: string }[]
+  >([]);
 
-// TODO: Replace with actual widget data
-export function Main(): JSX.Element {
+  useEffect(() => {
+    const fetchWidgets = async () => {
+      try {
+        const fetchedWidgets = await getModulesBySiteId(siteId);
+        setWidgets(fetchedWidgets);
+      } catch (error) {
+        console.error("Failed to fetch widgets:", error);
+      }
+    };
+
+    fetchWidgets();
+  }, [siteId]);
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {widgets.map((widget) => (
-        <Widget id={widget.id} content={widget.content} />
+        <Widget key={widget.id} id={widget.id} content={widget.content} />
       ))}
     </div>
   );

@@ -9,42 +9,42 @@ import { Input } from "@/ui/input";
 import { Label } from "@/ui/label";
 import { Button } from "@/ui/button";
 import { Separator } from "@/ui/separator";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useState } from "react";
 import { AlertTriangle } from "lucide-react";
 import { Switch } from "@/ui/switch";
 import { Site } from "@/models/Site";
+import { disconnectSite, deleteSite } from "@/services/siteService";
 
-export default function General({ site }: { site: Site }): JSX.Element {
+export default function General({
+  site,
+  setSites,
+}: {
+  site: Site;
+  setSites: React.Dispatch<React.SetStateAction<Site[]>>;
+}): JSX.Element {
+  const navigate = useNavigate();
   const { sitename } = useParams();
   const [siteName, setSiteName] = useState(site.name);
   const [siteDomain, setSiteDomain] = useState(site.domain);
   const [siteDescription, setSiteDescription] = useState(site.description);
 
-  const handleDisconnectSite = () => {
-    console.log(`Site ${site.name} disconnected.`);
-    // TODO: Add logic to disconnect the site
-  };
-
-  const handleDeleteSite = () => {
-    console.log(`Site ${site.name} deleted.`);
-    // TODO: Add logic to delete the site
+  const handleDeleteSite = async () => {
+    try {
+      await deleteSite(site.id);
+      setSites((prevSites) => prevSites.filter((s) => s.id !== site.id));
+      navigate("/dashboard");
+    } catch (error) {
+      console.error("Failed to delete site:", error);
+    }
   };
 
   const dangerActions = [
-    {
-      title: "Disconnect Site",
-      description:
-        "Temporarily disable the connection between this website and the monitoring platform. No data will be collected until reconnected.",
-      action: "toggle",
-      onToggle: handleDisconnectSite,
-    },
     {
       title: "Delete Site",
       description:
         "Permanently remove this website and all its associated data from your account.",
       warning: "This action cannot be undone.",
-      action: "button",
       buttonText: "Delete Site Permanently",
       onClick: handleDeleteSite,
     },
@@ -132,20 +132,13 @@ export default function General({ site }: { site: Site }): JSX.Element {
                 </p>
               </div>
 
-              {action.action === "toggle" ? (
-                <Switch
-                  aria-label={`Toggle ${action.title}`}
-                  onChange={action.onToggle}
-                />
-              ) : (
-                <Button
-                  variant="destructive"
-                  className="whitespace-nowrap"
-                  onClick={action.onClick}
-                >
-                  {action.buttonText}
-                </Button>
-              )}
+              <Button
+                variant="destructive"
+                className="whitespace-nowrap"
+                onClick={action.onClick}
+              >
+                {action.buttonText}
+              </Button>
             </div>
           ))}
         </CardContent>

@@ -45,7 +45,12 @@ const Dashboard: React.FC = () => {
     <div className="bg-white flex flex-col w-full min-h-screen">
       <Navbar user={user} />
       <div className="flex w-full flex-1">
-        <Sidebar user={user} setUser={setUser} sites={sites} />
+        <Sidebar
+          user={user}
+          setUser={setUser}
+          sites={sites}
+          setSites={setSites}
+        />
         <Main sites={sites} />
       </div>
     </div>

@@ -36,6 +36,13 @@ export const fetchModulesByTag = async (tag: string): Promise<Module[]> => {
   return response.data;
 };
 
+export const fetchAllModules = async (): Promise<Module[]> => {
+  const response = await axios.get(`${API_BASE_URL}/modules`, {
+    headers: getAuthHeaders(),
+  });
+  return response.data;
+};
+
 export const getModuleById = async (moduleId: string): Promise<Module> => {
   const response = await axios.get(`${API_BASE_URL}/modules/${moduleId}`, {
     headers: getAuthHeaders(),

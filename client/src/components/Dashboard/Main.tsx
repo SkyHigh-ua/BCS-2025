@@ -15,10 +15,12 @@ export function Main({
   user,
   setUser,
   sites,
+  setSites,
 }: {
   user: User;
   setUser: React.Dispatch<React.SetStateAction<User>>;
   sites: Site[];
+  setSites: React.Dispatch<React.SetStateAction<Site[]>>;
 }): JSX.Element {
   const { siteName } = useParams();
 
@@ -35,10 +37,10 @@ export function Main({
         <Route path="/add-site" element={<AddSite />} />
         {isValidSite ? (
           <>
-            <Route path="/:siteName" element={<SitePage />} />
+            <Route path="/:siteName" element={<SitePage siteId={site.id} />} />
             <Route
               path="/:siteName/settings/"
-              element={<General site={site} />}
+              element={<General site={site} setSites={setSites} />}
             />
             <Route
               path="/:siteName/settings/widgets"
