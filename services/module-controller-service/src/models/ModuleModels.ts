@@ -18,3 +18,13 @@ export interface Module {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export interface ModuleResult {
+  id?: number;
+  siteId: number;
+  moduleId: number;
+  timestamp: Date;
+  data: any;
+  site?: Site;
+  module?: Module;
+}

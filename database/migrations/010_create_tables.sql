@@ -69,3 +69,13 @@ CREATE TABLE public.sites (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (author) REFERENCES public.users(id) ON DELETE CASCADE
 );
+
+CREATE TABLE public.site_data (
+    id SERIAL PRIMARY KEY,
+    site_id INT NOT NULL,
+    module_id INT NOT NULL,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    data JSONB NOT NULL,
+    FOREIGN KEY (site_id) REFERENCES public.sites(id) ON DELETE CASCADE,
+    FOREIGN KEY (module_id) REFERENCES public.modules(id) ON DELETE CASCADE
+);

@@ -6,6 +6,7 @@ import { exec } from "child_process";
 import * as util from "util";
 import { MODULE_BASE_DIR } from "../utils/constants";
 import axios from "axios";
+import { ModuleResultRepository } from "../dal/ModuleResultRepository";
 
 const execPromise = util.promisify(exec);
 
@@ -17,20 +18,81 @@ interface RepoCache {
   };
 }
 
-const moduleController = {
-  moduleServiceUrl:
-    process.env.MODULE_SERVICE_URL || "http://module-service:5008",
-  repoCache: {} as RepoCache,
+interface ModuleResult {
+  timestamp: string;
+  data: any;
+}
+
+interface SiteResults {
+  [siteId: string]: ModuleResult[];
+}
+
+export class ModuleController {
+  private moduleServiceUrl: string;
+  private repoCache: RepoCache;
+  private moduleRepository: ModuleRepository;
+  private moduleResultRepository: ModuleResultRepository;
+
+  constructor(
+    moduleRepository: ModuleRepository,
+    moduleResultRepository?: ModuleResultRepository
+  ) {
+    this.moduleServiceUrl =
+      process.env.MODULE_SERVICE_URL || "http://module-service:5008";
+    this.repoCache = {};
+    this.moduleRepository = moduleRepository;
+    this.moduleResultRepository =
+      moduleResultRepository || new ModuleResultRepository();
+    this.initialize();
+  }
 
   initialize(): void {
     if (!fs.existsSync(MODULE_BASE_DIR)) {
       fs.mkdirSync(MODULE_BASE_DIR, { recursive: true });
     }
-  },
+  }
 
   getRepoCache(): RepoCache {
     return this.repoCache;
-  },
+  }
+
+  async getAllModules(req: Request, res: Response): Promise<void> {
+    try {
+      const modules = await this.moduleRepository.getAllModules();
+      res.status(200).json(modules);
+    } catch (error) {
+      logger.error("Error fetching all modules:", error);
+      res.status(500).json({ message: "Error fetching modules", error });
+    }
+  }
+
+  async getModuleById(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const module = await this.moduleRepository.getModuleById(id);
+
+      if (!module) {
+        return res.status(404).json({ message: "Module not found" });
+      }
+
+      res.status(200).json(module);
+    } catch (error) {
+      logger.error(`Error fetching module by id ${req.params.id}:`, error);
+      res.status(500).json({ message: "Error fetching module", error });
+    }
+  }
+
+  async createModule(req: Request, res: Response): Promise<void> {
+    // Implementation as needed for creation endpoints
+  }
+
+  async updateModule(req: Request, res: Response): Promise<void> {
+    // Implementation as needed for update endpoints
+  }
+
+  async deleteModule(req: Request, res: Response): Promise<void> {
+    // Implementation as needed for delete endpoints
+  }
 
   async collectData(req: Request, res: Response): Promise<void> {
     const { moduleId } = req.params;
@@ -39,10 +101,8 @@ const moduleController = {
     logger.info(`Collecting data for module ${moduleId} with siteId ${siteId}`);
 
     try {
-      const moduleResponse = await axios.get(
-        `${this.moduleServiceUrl}/${moduleId}`
-      );
-      const module = moduleResponse.data;
+      // Fetch module information
+      const module = await this.moduleRepository.getModuleById(moduleId);
 
       if (!module) {
         logger.warn(`Module ${moduleId} not found`);
@@ -119,6 +179,9 @@ const moduleController = {
           this.repoCache[moduleId].lastAccessed = new Date();
         }
 
+        // Save result to database
+        await this.saveResult(siteId, moduleId, result);
+
         logger.info(`Module execution completed successfully`);
         res.status(200).json(result);
       } catch (error) {
@@ -135,7 +198,32 @@ const moduleController = {
         .status(500)
         .json({ message: "Error collecting data from module", error });
     }
-  },
+  }
+
+  // Save the module execution result to database only
+  async saveResult(siteId: string, moduleId: string, data: any): Promise<void> {
+    if (!siteId) {
+      logger.warn("No siteId provided, skipping result saving");
+      return;
+    }
+
+    const timestamp = new Date();
+
+    // Save to database
+    try {
+      await this.moduleResultRepository.saveModuleResult({
+        siteId: parseInt(siteId),
+        moduleId: parseInt(moduleId),
+        timestamp: timestamp,
+        resultData: data,
+      });
+      logger.info(
+        `Result saved to database for site ${siteId} at ${timestamp.toISOString()}`
+      );
+    } catch (error) {
+      logger.error(`Error saving result to database: ${error}`);
+    }
+  }
 
   // Gets or creates a module directory, using the cache when possible
   async getModuleDirectory(
@@ -189,7 +277,7 @@ const moduleController = {
       logger.error(`Error cloning repository: ${error}`);
       return null;
     }
-  },
+  }
 
   // Prepare combined inputs for module execution by gathering site info, plugin data, and module inputs
   async prepareModuleInputs(
@@ -281,7 +369,7 @@ const moduleController = {
 
     logger.debug(`Prepared combined inputs for module execution:`, inputs);
     return inputs;
-  },
+  }
 
   async findModuleFile(
     dir: string
@@ -313,11 +401,16 @@ const moduleController = {
       logger.error(`Error finding module files: ${error}`);
       return {};
     }
-  },
-};
+  }
+}
 
-// Initialize the module controller
-moduleController.initialize();
+// Create singleton instance with dependencies
+const moduleRepository = new ModuleRepository();
+const moduleResultRepository = new ModuleResultRepository();
+const moduleController = new ModuleController(
+  moduleRepository,
+  moduleResultRepository
+);
 
 // Export the singleton controller instance
 export default moduleController;
