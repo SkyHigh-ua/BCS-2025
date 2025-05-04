@@ -287,4 +287,20 @@ export class UserRepository {
       throw new Error("Database error");
     }
   }
+
+  // TODO: Implement getGroupUsers method to fetch users in a group
+  async getGroupUsers(groupId: number): Promise<any[]> {
+    try {
+      const result = await this.pool.query(
+        "SELECT users.* FROM users " +
+          "JOIN user_groups ON users.id = user_groups.user_id " +
+          "WHERE user_groups.group_id = $1",
+        [groupId]
+      );
+      return result.rows;
+    } catch (error) {
+      console.error(`Error fetching users in group (${groupId}):`, error);
+      throw new Error("Database error");
+    }
+  }
 }

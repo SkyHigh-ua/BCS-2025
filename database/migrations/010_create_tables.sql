@@ -33,6 +33,8 @@ CREATE TABLE public.plugins (
     description TEXT,
     requirements JSONB,
     repo_link VARCHAR(255) NOT NULL,
+    fqdn VARCHAR(255) DEFAULT NULL,
+    outputs JSONB,
     tags VARCHAR(255)[],
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

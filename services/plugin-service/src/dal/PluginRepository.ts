@@ -47,11 +47,13 @@ export class PluginRepository {
     description: string;
     requirements: any;
     repoLink: string;
+    fqdn?: string;
+    outputs?: any;
     tags: string[];
   }): Promise<any> {
     const query = `
-      INSERT INTO public.plugins (name, description, requirements, repo_link, tags, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      INSERT INTO public.plugins (name, description, requirements, repo_link, fqdn, outputs, tags, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING *;
     `;
     const values = [
@@ -59,6 +61,8 @@ export class PluginRepository {
       plugin.description,
       plugin.requirements,
       plugin.repoLink,
+      plugin.fqdn || null,
+      plugin.outputs || null,
       plugin.tags,
       new Date(),
       new Date(),
@@ -74,6 +78,8 @@ export class PluginRepository {
       description?: string;
       requirements?: any;
       repoLink?: string;
+      fqdn?: string;
+      outputs?: any;
       tags?: string[];
     }
   ): Promise<any> {
@@ -84,9 +90,11 @@ export class PluginRepository {
         description = COALESCE($2, description),
         requirements = COALESCE($3, requirements),
         repo_link = COALESCE($4, repo_link),
-        tags = COALESCE($5, tags),
-        updated_at = $6
-      WHERE id = $7
+        fqdn = COALESCE($5, fqdn),
+        outputs = COALESCE($6, outputs),
+        tags = COALESCE($7, tags),
+        updated_at = $8
+      WHERE id = $9
       RETURNING *;
     `;
     const values = [
@@ -94,6 +102,8 @@ export class PluginRepository {
       plugin.description,
       plugin.requirements,
       plugin.repoLink,
+      plugin.fqdn,
+      plugin.outputs,
       plugin.tags,
       new Date(),
       pluginId,
@@ -131,5 +141,21 @@ export class PluginRepository {
     const values = [tags];
     const result = await this.pool.query(query, values);
     return result.rows;
+  }
+
+  // TODO: Implement getSitePlugins method to fetch plugins for a given site
+  async getSitePlugins(siteId: string): Promise<any[]> {
+    try {
+      const query = `
+        SELECT p.* FROM plugins p
+        JOIN site_plugins sp ON p.id = sp.plugin_id
+        WHERE sp.site_id = $1;
+      `;
+      const result = await this.pool.query(query, [siteId]);
+      return result.rows;
+    } catch (error) {
+      logger.error(`Error fetching plugins for site (${siteId}):`, error);
+      throw new Error("Database error");
+    }
   }
 }

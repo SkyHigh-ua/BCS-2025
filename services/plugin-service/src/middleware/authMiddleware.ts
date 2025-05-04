@@ -8,11 +8,10 @@ declare global {
   }
 }
 
-export function validateRole(requiredRoles: string[]) {
+export function validateRole(roles: string[]) {
   return (req: Request, res: Response, next: NextFunction) => {
-    const userRole = req.user?.role;
-    if (!userRole || !requiredRoles.includes(userRole)) {
-      return res.status(403).json({ message: "Forbidden: Insufficient role" });
+    if (!req.user || !("role" in req.user) || !roles.includes(req.user.role)) {
+      return res.status(403).json({ message: "Forbidden" });
     }
     next();
   };

@@ -116,6 +116,7 @@ export class ModuleController {
 
   async assignModulesToSite(req: Request, res: Response) {
     const { siteId } = req.params;
+    // TODO: Fix parameter name inconsistency - client sends 'modules' but server expects 'moduleIds'
     const { moduleIds, cronExpression } = req.body;
 
     if (!Array.isArray(moduleIds) || moduleIds.length === 0) {
@@ -158,6 +159,7 @@ export class ModuleController {
   }
 
   async getModulesByTags(req: Request, res: Response) {
+    // TODO: Fix parameter inconsistency - client sends 'tag' but server expects 'tags'
     const { tags } = req.query;
     if (!tags) {
       return res.status(400).json({ message: "Tags are required" });
@@ -178,4 +180,7 @@ export class ModuleController {
         .json({ message: "Error fetching modules by tags", error });
     }
   }
+
+  // TODO: Add implementation for deleteModule response format
+  // Client expects { success: boolean } but server sends empty response with 204 status
 }

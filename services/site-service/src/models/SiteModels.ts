@@ -13,6 +13,8 @@ export interface Plugin {
   description: string;
   requirements: any;
   repoLink: string;
+  fqdn?: string;
+  outputs?: any;
   tags: string[];
   createdAt: Date;
   updatedAt: Date;

@@ -53,11 +53,26 @@ describe("User Controller", () => {
   });
 
   it("should create a new user", async () => {
-    const mockUser = { id: 1, username: "user1", email: "user1@example.com" };
+    const mockUser = {
+      id: 1,
+      first_name: "John",
+      last_name: "Doe",
+      email: "john.doe@example.com",
+      password: "hashed_password",
+      role: 1,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
     mockUserRepository.createUser.mockResolvedValue(mockUser);
 
     const req = {
-      body: { username: "user1", email: "user1@example.com", password: "pass" },
+      body: {
+        first_name: "John",
+        last_name: "Doe",
+        email: "john.doe@example.com",
+        password: "password",
+        company: "ExampleCorp",
+      },
       headers: { "x-internal-service": "true" },
     } as any;
     const res = { status: jest.fn().mockReturnThis(), json: jest.fn() } as any;

@@ -155,11 +155,35 @@ export class UserController {
   async deleteUser(req: Request, res: Response) {
     try {
       await this.userRepository.deleteUser(Number(req.params.id));
-      logger.info(`[${req.method}] ${req.url} - 204: User deleted`);
-      res.status(204).send();
+      logger.info(`[${req.method}] ${req.url} - 200: User deleted`);
+      // Change from 204 with no content to 200 with success message
+      res.status(200).json({ success: true });
     } catch (error) {
       logger.error("Error deleting user:", error);
       res.status(500).json({ message: "Error deleting user", error });
+    }
+  }
+
+  async getCurrentUser(req: Request, res: Response) {
+    try {
+      if (!req.user || !("id" in req.user)) {
+        logger.info(`[${req.method}] ${req.url} - 401: User not authenticated`);
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const userId = req.user.id;
+      const user = await this.userRepository.getUserById(userId);
+
+      if (user) {
+        logger.info(`[${req.method}] ${req.url} - 200: Current user fetched`);
+        res.status(200).json(user);
+      } else {
+        logger.info(`[${req.method}] ${req.url} - 404: Current user not found`);
+        res.status(404).json({ message: "User not found" });
+      }
+    } catch (error) {
+      logger.error("Error fetching current user:", error);
+      res.status(500).json({ message: "Error fetching current user", error });
     }
   }
 }

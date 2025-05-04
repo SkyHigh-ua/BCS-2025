@@ -28,4 +28,6 @@ router.post(
   groupController.assignGroupToUser.bind(groupController)
 );
 
+router.get("/:id/users", groupController.getGroupUsers.bind(groupController));
+
 export default router;

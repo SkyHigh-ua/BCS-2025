@@ -1,7 +1,7 @@
 {
-  "name": "rbac-service",
+  "name": "module-controller-service",
   "version": "1.0.0",
-  "description": "RBAC Service",
+  "description": "Module Service",
   "main": "src/app.ts",
   "scripts": {
     "start": "ts-node src/app.ts",
@@ -14,9 +14,9 @@
     "express": "^4.17.1",
     "pg": "^8.7.1",
     "cors": "^2.8.5",
-    "body-parser": "^1.19.0",
     "jsonwebtoken": "^9.0.2",
-    "winston": "^3.8.2"
+    "winston": "^3.8.2",
+    "axios": "^0.21.1"
   },
   "devDependencies": {
     "@types/express": "^4.17.13",

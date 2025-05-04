@@ -7,14 +7,13 @@ export interface Site {
   createdAt: Date;
 }
 
-export interface Plugin {
+export interface Module {
   id: number;
   name: string;
   description: string;
-  requirements: any;
   repoLink: string;
-  fqdn?: string;
-  outputs?: any;
+  inputs: any;
+  outputs: any;
   tags: string[];
   createdAt: Date;
   updatedAt: Date;
