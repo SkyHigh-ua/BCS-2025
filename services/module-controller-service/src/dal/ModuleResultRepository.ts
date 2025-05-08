@@ -99,4 +99,73 @@ export class ModuleResultRepository {
       throw new Error("Database error when fetching module results");
     }
   }
+
+  async getLatestModuleResult(
+    siteId: number,
+    moduleId: number
+  ): Promise<ModuleResult | null> {
+    try {
+      const query = `
+        SELECT id, site_id, module_id, timestamp, result_data
+        FROM module_results
+        WHERE site_id = $1 AND module_id = $2
+        ORDER BY timestamp DESC
+        LIMIT 1
+      `;
+
+      const res = await this.pool.query(query, [siteId, moduleId]);
+
+      if (res.rows.length === 0) {
+        return null;
+      }
+
+      return {
+        id: res.rows[0].id,
+        siteId: res.rows[0].site_id,
+        moduleId: res.rows[0].module_id,
+        timestamp: res.rows[0].timestamp,
+        resultData: res.rows[0].result_data,
+      };
+    } catch (error) {
+      logger.error(
+        `Error fetching latest module result for site ${siteId} and module ${moduleId}:`,
+        error
+      );
+      throw new Error("Database error when fetching latest module result");
+    }
+  }
+
+  async getLatestModuleResultByModuleId(
+    moduleId: number
+  ): Promise<ModuleResult | null> {
+    try {
+      const query = `
+        SELECT id, site_id, module_id, timestamp, result_data
+        FROM module_results
+        WHERE module_id = $1
+        ORDER BY timestamp DESC
+        LIMIT 1
+      `;
+
+      const res = await this.pool.query(query, [moduleId]);
+
+      if (res.rows.length === 0) {
+        return null;
+      }
+
+      return {
+        id: res.rows[0].id,
+        siteId: res.rows[0].site_id,
+        moduleId: res.rows[0].module_id,
+        timestamp: res.rows[0].timestamp,
+        resultData: res.rows[0].result_data,
+      };
+    } catch (error) {
+      logger.error(
+        `Error fetching latest module result for module ${moduleId}:`,
+        error
+      );
+      throw new Error("Database error when fetching latest module result");
+    }
+  }
 }

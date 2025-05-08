@@ -7,6 +7,7 @@ import * as util from "util";
 import { MODULE_BASE_DIR } from "../utils/constants";
 import axios from "axios";
 import { ModuleResultRepository } from "../dal/ModuleResultRepository";
+import { findModuleFile } from "../middleware/moduleMiddleware";
 
 const execPromise = util.promisify(exec);
 
@@ -94,43 +95,122 @@ export class ModuleController {
     // Implementation as needed for delete endpoints
   }
 
+  // Get widget component from the module repository
+  async getWidgetComponent(req: Request, res: Response): Promise<void> {
+    try {
+      const { moduleId } = req.params;
+      const moduleDir = req.moduleDir;
+
+      if (!moduleDir) {
+        logger.error(`Module directory not found for module ${moduleId}`);
+        return res
+          .status(500)
+          .json({ message: "Module directory not available" });
+      }
+
+      // Find the widget.tsx file
+      const moduleFiles = await findModuleFile(moduleDir);
+
+      if (!moduleFiles.widgetTs) {
+        logger.error(
+          `Widget.tsx file not found in repository for module ${moduleId}`
+        );
+        return res
+          .status(404)
+          .json({ message: "Widget component not found in repository" });
+      }
+
+      // Read the widget.tsx file
+      const widgetContent = fs.readFileSync(moduleFiles.widgetTs, "utf8");
+
+      logger.info(`Widget component found and read for module ${moduleId}`);
+
+      // Return just the widget component content
+      res.status(200).json({
+        component: widgetContent,
+      });
+    } catch (error) {
+      logger.error("Error fetching widget component:", error);
+      res.status(500).json({
+        message: "Error fetching widget component",
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  // Get saved data for a module
+  async getModuleData(req: Request, res: Response): Promise<void> {
+    try {
+      const { moduleId, siteId } = req.params;
+
+      if (!moduleId) {
+        return res.status(400).json({ message: "Module ID is required" });
+      }
+
+      // Fetch the latest module data from the database
+      let moduleData = null;
+
+      if (siteId) {
+        // If siteId is provided, get site-specific data
+        moduleData = await this.moduleResultRepository.getLatestModuleResult(
+          parseInt(siteId),
+          parseInt(moduleId)
+        );
+      } else {
+        // Without siteId, get the latest data for this module across all sites
+        moduleData =
+          await this.moduleResultRepository.getLatestModuleResultByModuleId(
+            parseInt(moduleId)
+          );
+      }
+
+      if (!moduleData) {
+        logger.info(
+          `No data found for module ${moduleId} ${
+            siteId ? `and site ${siteId}` : ""
+          }`
+        );
+        return res.status(200).json({ inputs: {} }); // Return empty inputs
+      }
+
+      logger.info(`Module data found for module ${moduleId}`);
+
+      // Return the module data
+      res.status(200).json({
+        inputs: moduleData.resultData || {},
+      });
+    } catch (error) {
+      logger.error("Error fetching module data:", error);
+      res.status(500).json({
+        message: "Error fetching module data",
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
   async collectData(req: Request, res: Response): Promise<void> {
     const { moduleId } = req.params;
     const { siteId, ...customInputs } = req.body;
+    const moduleDir = req.moduleDir;
 
     logger.info(`Collecting data for module ${moduleId} with siteId ${siteId}`);
 
     try {
-      // Fetch module information
-      const module = await this.moduleRepository.getModuleById(moduleId);
-
-      if (!module) {
-        logger.warn(`Module ${moduleId} not found`);
-        return res.status(404).json({ message: "Module not found" });
+      if (!moduleDir) {
+        logger.error(`Module directory not found for module ${moduleId}`);
+        return res
+          .status(500)
+          .json({ message: "Module directory not available" });
       }
 
       const inputs = await this.prepareModuleInputs(
         siteId,
-        module,
+        req.moduleInfo,
         customInputs
       );
 
-      const moduleDir = await this.getModuleDirectory(
-        moduleId,
-        module.repoLink
-      );
-
-      if (!moduleDir) {
-        logger.error(
-          `Failed to prepare module directory for module ${moduleId}`
-        );
-        return res
-          .status(500)
-          .json({ message: "Failed to prepare module directory" });
-      }
-
       // Find the module.ts file
-      const moduleFiles = await this.findModuleFile(moduleDir);
+      const moduleFiles = await findModuleFile(moduleDir);
 
       if (!moduleFiles.moduleTs) {
         logger.error(
@@ -228,7 +308,8 @@ export class ModuleController {
   // Gets or creates a module directory, using the cache when possible
   async getModuleDirectory(
     moduleId: string,
-    repoLink: string
+    repoLink: string,
+    moduleFolder?: string
   ): Promise<string | null> {
     // If no repo link provided, we can't proceed
     if (!repoLink) {
@@ -236,37 +317,74 @@ export class ModuleController {
       return null;
     }
 
+    // Create a cache key that includes the module folder if present
+    const cacheKey = moduleFolder ? `${moduleId}-${moduleFolder}` : moduleId;
+
     // Check if we have this module in cache and it's still valid
     if (
-      this.repoCache[moduleId] &&
-      this.repoCache[moduleId].repoLink === repoLink
+      this.repoCache[cacheKey] &&
+      this.repoCache[cacheKey].repoLink === repoLink
     ) {
-      const cachedDir = this.repoCache[moduleId].path;
+      const cachedDir = this.repoCache[cacheKey].path;
 
       // Check if directory still exists
       if (fs.existsSync(cachedDir)) {
         logger.info(`Using cached module directory for module ${moduleId}`);
-        this.repoCache[moduleId].lastAccessed = new Date();
+        this.repoCache[cacheKey].lastAccessed = new Date();
         return cachedDir;
       }
     }
 
     // Create a new directory for this module
-    const moduleDir = path.join(
+    const tempDir = path.join(
       MODULE_BASE_DIR,
       `module-${moduleId}-${Date.now()}`
     );
-    if (!fs.existsSync(moduleDir)) {
-      fs.mkdirSync(moduleDir, { recursive: true });
+    if (!fs.existsSync(tempDir)) {
+      fs.mkdirSync(tempDir, { recursive: true });
     }
 
     // Clone the repository
     logger.info(`Cloning repository from ${repoLink}`);
     try {
-      await execPromise(`git clone ${repoLink} ${moduleDir}`);
+      await execPromise(`git clone ${repoLink} ${tempDir}`);
+      
+      // If moduleFolder is specified, create the final directory and copy only that folder
+      let moduleDir = tempDir;
+      
+      if (moduleFolder) {
+        const sourcePath = path.join(tempDir, moduleFolder);
+        
+        // Check if the specified folder exists in the repo
+        if (!fs.existsSync(sourcePath)) {
+          logger.error(`Module folder '${moduleFolder}' not found in repository`);
+          return null;
+        }
+        
+        // Create a new directory with only the specified module folder
+        moduleDir = path.join(
+          MODULE_BASE_DIR,
+          `module-${moduleId}-folder-${Date.now()}`
+        );
+        
+        if (!fs.existsSync(moduleDir)) {
+          fs.mkdirSync(moduleDir, { recursive: true });
+        }
+        
+        // Copy the specified folder to the new directory
+        logger.info(`Copying module folder '${moduleFolder}' to ${moduleDir}`);
+        
+        // Use cp -r for recursive copy (works on macOS and Linux)
+        await execPromise(`cp -r ${sourcePath}/* ${moduleDir}/`);
+        
+        // Clean up the temporary clone directory
+        fs.rmSync(tempDir, { recursive: true, force: true });
+        
+        logger.info(`Successfully copied module folder and cleaned up temp directory`);
+      }
 
       // Add to cache
-      this.repoCache[moduleId] = {
+      this.repoCache[cacheKey] = {
         path: moduleDir,
         lastAccessed: new Date(),
         repoLink: repoLink,
@@ -274,7 +392,11 @@ export class ModuleController {
 
       return moduleDir;
     } catch (error) {
-      logger.error(`Error cloning repository: ${error}`);
+      logger.error(`Error preparing module directory: ${error}`);
+      // Clean up on error
+      if (fs.existsSync(tempDir)) {
+        fs.rmSync(tempDir, { recursive: true, force: true });
+      }
       return null;
     }
   }
