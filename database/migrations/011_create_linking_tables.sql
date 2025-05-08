@@ -55,3 +55,11 @@ CREATE TABLE public.module_parents (
     FOREIGN KEY (module_id) REFERENCES public.modules(id) ON DELETE CASCADE,
     FOREIGN KEY (parent_module_id) REFERENCES public.modules(id) ON DELETE CASCADE
 );
+
+CREATE TABLE public.site_data (
+    id SERIAL PRIMARY KEY,
+    module_id INT NOT NULL,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    data JSONB NOT NULL,
+    FOREIGN KEY (module_id) REFERENCES public.site_modules(id) ON DELETE CASCADE
+);
