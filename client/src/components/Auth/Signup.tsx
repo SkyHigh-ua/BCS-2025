@@ -43,12 +43,12 @@ const Signup: React.FC = () => {
           companyName,
         });
 
-        if (signupResponse.token) {
-          localStorage.setItem("jwt", signupResponse.token);
+        if (signupResponse.login_token) {
+          localStorage.setItem("jwt", signupResponse.login_token);
         }
 
         const { url, name, pluginId } = formData.siteInfo;
-        const siteResponse = await createSite({ url, name });
+        const siteResponse = await createSite({ url, name, `Website ${name}`});
         setSiteId(siteResponse.id);
         const pluginResponse = await assignPluginToSite(
           pluginId,

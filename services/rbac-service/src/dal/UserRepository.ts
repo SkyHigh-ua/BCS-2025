@@ -288,7 +288,6 @@ export class UserRepository {
     }
   }
 
-  // TODO: Implement getGroupUsers method to fetch users in a group
   async getGroupUsers(groupId: number): Promise<any[]> {
     try {
       const result = await this.pool.query(

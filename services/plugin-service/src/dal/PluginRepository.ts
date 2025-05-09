@@ -143,7 +143,6 @@ export class PluginRepository {
     return result.rows;
   }
 
-  // TODO: Implement getSitePlugins method to fetch plugins for a given site
   async getSitePlugins(siteId: string): Promise<any[]> {
     try {
       const query = `

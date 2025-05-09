@@ -38,8 +38,13 @@ export class SiteController {
   }
 
   async createSite(req: Request, res: Response) {
-    const { domain, name, description, author } = req.body;
+    const { domain, name, description } = req.body;
+    const author = req.user && "id" in req.user ? req.user.id : undefined;
     try {
+      if (!author) {
+        logger.info(`[${req.method}] ${req.url} - 400: Invalid user`);
+        return res.status(400).json({ message: "Invalid user" });
+      }
       const site = await this.siteRepository.createSite({
         domain,
         name,
@@ -73,14 +78,11 @@ export class SiteController {
     }
   }
 
-  // TODO: Client expects deleteSite to return { success: boolean } but server sends empty response with 204 status
-  // Consider updating to return { success: true } with 200 status instead of 204 with no content
   async deleteSite(req: Request, res: Response) {
     try {
       await this.siteRepository.deleteSite(Number(req.params.id));
       logger.info(`[${req.method}] ${req.url} - 204: Site deleted`);
-      // res.status(204).send();
-      res.status(200).json({ success: true });
+      res.status(204).send();
     } catch (error) {
       logger.error("Error deleting site:", error);
       res.status(500).json({ message: "Error deleting site", error });

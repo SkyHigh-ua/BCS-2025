@@ -155,9 +155,8 @@ export class UserController {
   async deleteUser(req: Request, res: Response) {
     try {
       await this.userRepository.deleteUser(Number(req.params.id));
-      logger.info(`[${req.method}] ${req.url} - 200: User deleted`);
-      // Change from 204 with no content to 200 with success message
-      res.status(200).json({ success: true });
+      logger.info(`[${req.method}] ${req.url} - 204: User deleted`);
+      res.status(204).send();
     } catch (error) {
       logger.error("Error deleting user:", error);
       res.status(500).json({ message: "Error deleting user", error });

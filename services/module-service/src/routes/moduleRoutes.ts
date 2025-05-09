@@ -11,14 +11,8 @@ router.post(
   moduleController.createModule.bind(moduleController)
 );
 router.get("/", moduleController.getAllModules.bind(moduleController));
-// TODO: Add route for fetching modules by tag - client makes GET request to /modules with tag parameter
-// Consider updating the route implementation to support both getAllModules and getModulesByTags
 router.get("/tags", moduleController.getModulesByTags.bind(moduleController));
 router.get("/:id", moduleController.getModuleById.bind(moduleController));
-router.get(
-  "/site/:siteId",
-  moduleController.getModulesBySiteId.bind(moduleController)
-);
 router.put(
   "/:id",
   validateRole(["0"]),
@@ -28,6 +22,14 @@ router.delete(
   "/:id",
   validateRole(["0"]),
   moduleController.deleteModule.bind(moduleController)
+);
+router.get(
+  "/:id/widget",
+  moduleController.getWidgetComponent.bind(moduleController)
+);
+router.get(
+  "/site/:siteId",
+  moduleController.getModulesBySiteId.bind(moduleController)
 );
 router.post(
   "/site/:siteId",

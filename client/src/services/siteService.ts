@@ -1,32 +1,32 @@
 import axios from "axios";
 import { Site } from "@/models/Site";
 
-const API_BASE_URL = `${process.env.REACT_APP_API_BASE_URL}/api`;
+const API_BASE_URL = `${process.env.API_BASE_URL}/api/sites`;
 
 const getAuthHeaders = () => ({
   Authorization: `Bearer ${localStorage.getItem("jwt")}`,
 });
 
 export const createSite = async (siteData: {
-  url: string;
+  domain: string;
   name: string;
-  monitoringType: string;
+  description: string;
 }): Promise<Site> => {
-  const response = await axios.post(`${API_BASE_URL}/site`, siteData, {
+  const response = await axios.post(`${API_BASE_URL}/`, siteData, {
     headers: getAuthHeaders(),
   });
   return response.data;
 };
 
 export const getAllSites = async (): Promise<Site[]> => {
-  const response = await axios.get(`${API_BASE_URL}/site`, {
+  const response = await axios.get(`${API_BASE_URL}/`, {
     headers: getAuthHeaders(),
   });
   return response.data;
 };
 
 export const getSiteById = async (siteId: string): Promise<Site> => {
-  const response = await axios.get(`${API_BASE_URL}/site/${siteId}`, {
+  const response = await axios.get(`${API_BASE_URL}/${siteId}`, {
     headers: getAuthHeaders(),
   });
   return response.data;
@@ -36,19 +36,16 @@ export const updateSite = async (
   siteId: string,
   siteData: any
 ): Promise<Site> => {
-  const response = await axios.put(`${API_BASE_URL}/site/${siteId}`, siteData, {
+  const response = await axios.put(`${API_BASE_URL}/${siteId}`, siteData, {
     headers: getAuthHeaders(),
   });
   return response.data;
 };
 
-export const deleteSite = async (
-  siteId: string
-): Promise<{ success: boolean }> => {
-  const response = await axios.delete(`${API_BASE_URL}/site/${siteId}`, {
+export const deleteSite = async (siteId: string): Promise<void> => {
+  await axios.delete(`${API_BASE_URL}/${siteId}`, {
     headers: getAuthHeaders(),
   });
-  return response.data;
 };
 
 export const getUserSites = async (): Promise<Site[]> => {
@@ -56,7 +53,7 @@ export const getUserSites = async (): Promise<Site[]> => {
     headers: getAuthHeaders(),
   });
 
-  if (!response.ok) {
+  if (!response.data) {
     throw new Error("Failed to fetch user sites");
   }
 

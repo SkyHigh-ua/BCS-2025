@@ -7,6 +7,5 @@ const router = Router();
 
 router.use("/roles", validateJWT, roleRoutes);
 router.use("/groups", validateJWT, groupRoutes);
-// TODO: system roles handling
 
 export default router;

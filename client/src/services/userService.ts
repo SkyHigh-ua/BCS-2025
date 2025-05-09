@@ -1,14 +1,14 @@
 import axios from "axios";
 import { User } from "@/models/User";
 
-const API_BASE_URL = `${process.env.REACT_APP_API_BASE_URL}/api`;
+const API_BASE_URL = `${process.env.API_BASE_URL}/api/user`;
 
 const getAuthHeaders = () => ({
   Authorization: `Bearer ${localStorage.getItem("jwt")}`,
 });
 
 export const fetchUsers = async (): Promise<User[]> => {
-  const response = await axios.get(`${API_BASE_URL}/user`, {
+  const response = await axios.get(`${API_BASE_URL}/`, {
     headers: getAuthHeaders(),
   });
   return response.data;
@@ -18,7 +18,7 @@ export const updateUser = async (
   userId: string,
   userData: { name?: string; email?: string }
 ): Promise<User> => {
-  const response = await axios.put(`${API_BASE_URL}/user/${userId}`, userData, {
+  const response = await axios.put(`${API_BASE_URL}/${userId}`, userData, {
     headers: getAuthHeaders(),
   });
   return response.data;
@@ -28,27 +28,24 @@ export const createUser = async (userData: {
   name: string;
   email: string;
 }): Promise<User> => {
-  const response = await axios.post(`${API_BASE_URL}/user/sub-user`, userData, {
+  const response = await axios.post(`${API_BASE_URL}/sub-user`, userData, {
     headers: getAuthHeaders(),
   });
   return response.data;
 };
 
-export const deleteUser = async (
-  userId: string
-): Promise<{ success: boolean }> => {
-  const response = await axios.delete(`${API_BASE_URL}/user/${userId}`, {
+export const deleteUser = async (userId: string): Promise<void> => {
+  await axios.delete(`${API_BASE_URL}/${userId}`, {
     headers: getAuthHeaders(),
   });
-  return response.data;
 };
 
 export const getUserData = async (): Promise<User> => {
-  const response = await axios.get(`${API_BASE_URL}/user`, {
+  const response = await axios.get(`${API_BASE_URL}/me`, {
     headers: getAuthHeaders(),
   });
 
-  if (!response.ok) {
+  if (!response.data) {
     throw new Error("Failed to fetch user data");
   }
 

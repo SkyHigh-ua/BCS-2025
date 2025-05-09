@@ -152,7 +152,7 @@ services:
       - "3000:3000"
     environment:
       NODE_ENV: dev
-      REACT_APP_API_BASE_URL: http://gateway:4000
+      API_BASE_URL: http://gateway:4000
     depends_on:
       - gateway
 

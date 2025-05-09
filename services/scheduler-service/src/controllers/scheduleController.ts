@@ -1,35 +1,59 @@
 import { Request, Response } from "express";
 import axios from "axios";
 import logger from "../utils/logger";
+import { CronExpressionParser } from "cron-parser";
 
 export class ScheduleController {
   private schedules: Record<string, NodeJS.Timeout> = {};
 
   public async scheduleModule(req: Request, res: Response): Promise<void> {
-    const { siteId, moduleId, interval } = req.body;
+    const { siteId, moduleId, cronExpression } = req.body;
 
-    logger.debug(
-      `Scheduling module ${moduleId} for site ${siteId} with interval ${interval}ms`
-    );
+    try {
+      const interval = CronExpressionParser.parse(cronExpression);
+      const nextRun = interval.next().toDate();
+      const timeUntilNextRun = nextRun.getTime() - Date.now();
 
-    if (this.schedules[`${siteId}-${moduleId}`]) {
-      logger.warn(`Module ${moduleId} is already scheduled for site ${siteId}`);
-      res
-        .status(400)
-        .json({ message: "Module is already scheduled for this site" });
-      return Promise.resolve();
+      logger.debug(
+        `Scheduling module ${moduleId} for site ${siteId} with next run at ${nextRun.toISOString()}`
+      );
+
+      if (this.schedules[`${siteId}-${moduleId}`]) {
+        logger.warn(
+          `Module ${moduleId} is already scheduled for site ${siteId}`
+        );
+        res
+          .status(400)
+          .json({ message: "Module is already scheduled for this site" });
+        return Promise.resolve();
+      }
+
+      this.scheduleCronTask(siteId, moduleId, cronExpression, timeUntilNextRun);
+
+      logger.info(`Module ${moduleId} scheduled for site ${siteId}`);
+      res.status(200).json({
+        message: `Module ${moduleId} scheduled for site ${siteId} with next execution at ${nextRun.toISOString()}`,
+      });
+    } catch (error) {
+      logger.error(`Error scheduling module: ${(error as Error).message}`);
+      res.status(400).json({
+        message: `Invalid cron expression: ${(error as Error).message}`,
+      });
     }
+  }
 
-    const task = setInterval(async () => {
+  private scheduleCronTask(
+    siteId: string,
+    moduleId: string,
+    cronExpression: string,
+    initialDelay: number
+  ): void {
+    const task = setTimeout(async () => {
       try {
         logger.info(`Executing module ${moduleId} for site ${siteId}`);
         await axios.post(
           `http://module-controller-service/api/modules/execute/${moduleId}`,
           { siteId }
-        );
-        logger.info(`Collecting core data for site ${siteId}`);
-        await axios.post(
-          `http://site-service/api/sites/${siteId}/collect-data`
         );
       } catch (error) {
         logger.error(
@@ -37,13 +61,32 @@ export class ScheduleController {
           (error as Error).message
         );
       }
-    }, interval);
+
+      try {
+        const interval = CronExpressionParser.parse(cronExpression);
+        const nextRun = interval.next().toDate();
+        const timeUntilNextRun = nextRun.getTime() - Date.now();
+
+        logger.debug(
+          `Next execution of ${moduleId} for site ${siteId} scheduled at ${nextRun.toISOString()}`
+        );
+
+        delete this.schedules[`${siteId}-${moduleId}`];
+
+        this.scheduleCronTask(
+          siteId,
+          moduleId,
+          cronExpression,
+          timeUntilNextRun
+        );
+      } catch (error) {
+        logger.error(
+          `Error scheduling next execution: ${(error as Error).message}`
+        );
+      }
+    }, initialDelay);
 
     this.schedules[`${siteId}-${moduleId}`] = task;
-    logger.info(`Module ${moduleId} scheduled for site ${siteId}`);
-    res.status(200).json({
-      message: `Module ${moduleId} scheduled for site ${siteId} every ${interval}ms`,
-    });
   }
 
   public unscheduleModule(req: Request, res: Response): Response {
@@ -58,7 +101,7 @@ export class ScheduleController {
         .json({ message: "Module is not scheduled for this site" });
     }
 
-    clearInterval(this.schedules[`${siteId}-${moduleId}`]);
+    clearTimeout(this.schedules[`${siteId}-${moduleId}`]);
     delete this.schedules[`${siteId}-${moduleId}`];
     logger.debug(`Module ${moduleId} unscheduled for site ${siteId}`);
     return res

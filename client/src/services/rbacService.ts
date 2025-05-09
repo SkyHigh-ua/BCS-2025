@@ -2,7 +2,7 @@ import axios from "axios";
 import { Role } from "@/models/Role";
 import { Group } from "@/models/Group";
 
-const API_BASE_URL = `${process.env.REACT_APP_API_BASE_URL}/api`;
+const API_BASE_URL = `${process.env.API_BASE_URL}/api/rbac`;
 
 const getAuthHeaders = () => ({
   Authorization: `Bearer ${localStorage.getItem("jwt")}`,
@@ -83,9 +83,12 @@ export const assignGroupToSite = async (
 };
 
 export const getUserOwnedGroups = async (userId: string): Promise<Group[]> => {
-  const response = await axios.get(`${API_BASE_URL}/groups/user/${userId}`, {
-    headers: getAuthHeaders(),
-  });
+  const response = await axios.get(
+    `${API_BASE_URL}/groups/user/${userId}/owned`,
+    {
+      headers: getAuthHeaders(),
+    }
+  );
   return response.data;
 };
 

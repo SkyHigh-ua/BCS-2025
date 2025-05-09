@@ -127,14 +127,13 @@ export class GroupController {
     }
   }
 
-  // TODO: Client calls getGroupUsers but implementation is missing
   async getGroupUsers(req: Request, res: Response) {
     logger.debug("Fetching users in group");
     const { groupId } = req.params;
     try {
-      // Repository method needs to be implemented
-      logger.warn(`Method not implemented: getGroupUsers for group ${groupId}`);
-      res.status(501).json({ message: "Method not implemented" });
+      const users = await this.userRepository.getGroupUsers(Number(groupId));
+      logger.debug(`Fetched users in group ${groupId} successfully`);
+      res.status(200).json(users);
     } catch (error) {
       logger.error("Error fetching users in group:", error);
       res.status(500).json({ message: "Error fetching users in group", error });

@@ -1,9 +1,9 @@
 import axios from "axios";
 
-const API_BASE_URL = `${process.env.REACT_APP_API_BASE_URL}/api`;
+const API_BASE_URL = `${process.env.API_BASE_URL}/api/auth`;
 
 export const login = async (email: string, password: string) => {
-  const response = await axios.post(`${API_BASE_URL}/auth/login`, {
+  const response = await axios.post(`${API_BASE_URL}/login`, {
     email,
     password,
   });
@@ -17,7 +17,7 @@ export const signup = async (
   last_name: string,
   company?: string
 ) => {
-  const response = await axios.post(`${API_BASE_URL}/auth/register`, {
+  const response = await axios.post(`${API_BASE_URL}/register`, {
     email,
     password,
     first_name,

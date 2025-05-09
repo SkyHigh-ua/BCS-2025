@@ -120,7 +120,6 @@ export class ModuleController {
 
   async assignModulesToSite(req: Request, res: Response) {
     const { siteId } = req.params;
-    // TODO: Fix parameter name inconsistency - client sends 'modules' but server expects 'moduleIds'
     const { moduleIds, cronExpression } = req.body;
 
     if (!Array.isArray(moduleIds) || moduleIds.length === 0) {
@@ -163,7 +162,6 @@ export class ModuleController {
   }
 
   async getModulesByTags(req: Request, res: Response) {
-    // TODO: Fix parameter inconsistency - client sends 'tag' but server expects 'tags'
     const { tags } = req.query;
     if (!tags) {
       return res.status(400).json({ message: "Tags are required" });
@@ -189,56 +187,40 @@ export class ModuleController {
     try {
       const { moduleId } = req.params;
 
-      // First, get the module info from our database
-      const module = await this.moduleRepository.getModuleById(moduleId);
-
-      if (!module) {
-        logger.info(`[${req.method}] ${req.url} - 404: Module not found`);
-        return res.status(404).json({ message: "Module not found" });
-      }
-
-      // Make two separate requests to module-controller-service
-      // 1. Get the widget component
       let componentContent;
       try {
         const componentResponse = await axios.get(
-          `${this.moduleControllerUrl}/api/modules/widget/${moduleId}`
+          `${this.moduleControllerUrl}/widget/${moduleId}`
         );
         componentContent = componentResponse.data.component;
       } catch (error) {
         logger.error(
-          `Error fetching widget component from module controller: ${error.message}`
+          `Error fetching widget component from module controller: ${error}`
         );
         componentContent = null;
       }
 
-      // 2. Get the module data
-      let moduleData = {};
+      let componentData;
       try {
-        // If siteId is provided in the query, use it to get site-specific data
-        const siteId = req.query.siteId;
-        const dataUrl = siteId
-          ? `${this.moduleControllerUrl}/api/modules/data/${moduleId}/site/${siteId}`
-          : `${this.moduleControllerUrl}/api/modules/data/${moduleId}`;
-
-        const dataResponse = await axios.get(dataUrl);
-        moduleData = dataResponse.data.inputs || {};
+        const componentResponse = await axios.get(
+          `${this.moduleControllerUrl}/data/${moduleId}`
+        );
+        componentData = componentResponse.data.component;
       } catch (error) {
         logger.error(
-          `Error fetching module data from module controller: ${error.message}`
+          `Error fetching widget component from module controller: ${error}`
         );
-        // Continue with empty data if we can't get the data
+        componentData = null;
       }
 
       logger.info(
         `[${req.method}] ${req.url} - 200: Widget component and data fetched`
       );
 
-      // Return the combined response
       res.status(200).json({
         module,
         component: componentContent,
-        inputs: moduleData,
+        inputs: componentData,
       });
     } catch (error) {
       logger.error("Error fetching widget component:", error);
@@ -248,7 +230,4 @@ export class ModuleController {
       });
     }
   }
-
-  // TODO: Add implementation for deleteModule response format
-  // Client expects { success: boolean } but server sends empty response with 204 status
 }
