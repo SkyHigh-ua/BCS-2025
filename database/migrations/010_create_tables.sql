@@ -55,7 +55,7 @@ CREATE TABLE public.groups (
     name VARCHAR(100) NOT NULL,
     description TEXT,
     author INT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (author) REFERENCES public.users(id) ON DELETE CASCADE
 );
 
