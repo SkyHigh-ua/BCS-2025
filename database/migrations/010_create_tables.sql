@@ -47,7 +47,6 @@ CREATE TABLE public.roles (
     description TEXT,
     permissions JSONB,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (author) REFERENCES public.users(id) ON DELETE CASCADE
 );
 
 -- Groups of users
@@ -57,6 +56,7 @@ CREATE TABLE public.groups (
     description TEXT,
     author INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    FOREIGN KEY (author) REFERENCES public.users(id) ON DELETE CASCADE
 );
 
 -- Sites that can be managed by users
