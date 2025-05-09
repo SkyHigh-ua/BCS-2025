@@ -14,6 +14,14 @@ router.get(
 router.get("/:id", groupController.getGroupById.bind(groupController));
 router.put("/:id", groupController.updateGroup.bind(groupController));
 router.delete("/:id", groupController.deleteGroup.bind(groupController));
+router.get(
+  "/:id/sites",
+  groupController.getSitesForGroup.bind(groupController)
+);
+router.delete(
+  "/:groupId/site/:siteId",
+  groupController.removeSiteFromGroup.bind(groupController)
+);
 
 router.get(
   "/user/:userId/owned",

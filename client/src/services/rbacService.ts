@@ -98,3 +98,23 @@ export const getGroupUsers = async (groupId: string): Promise<any[]> => {
   });
   return response.data;
 };
+
+export const getSitesForGroup = async (groupId: string): Promise<any[]> => {
+  const response = await axios.get(`${API_BASE_URL}/groups/${groupId}/sites`, {
+    headers: getAuthHeaders(),
+  });
+  return response.data;
+};
+
+export const removeSiteFromGroup = async (
+  groupId: string,
+  siteId: string
+): Promise<void> => {
+  const response = await axios.delete(
+    `${API_BASE_URL}/groups/${groupId}/sites/${siteId}`,
+    {
+      headers: getAuthHeaders(),
+    }
+  );
+  return response.data;
+};

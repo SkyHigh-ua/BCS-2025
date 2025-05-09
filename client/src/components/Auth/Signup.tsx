@@ -48,7 +48,8 @@ const Signup: React.FC = () => {
         }
 
         const { url, name, pluginId } = formData.siteInfo;
-        const siteResponse = await createSite({ url, name, `Website ${name}`});
+        const descrciption = `Site created by ${firstName} ${lastName}`;
+        const siteResponse = await createSite({ url, name, descrciption });
         setSiteId(siteResponse.id);
         const pluginResponse = await assignPluginToSite(
           pluginId,

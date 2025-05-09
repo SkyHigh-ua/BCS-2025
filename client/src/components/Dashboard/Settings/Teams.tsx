@@ -40,7 +40,7 @@ import {
   getUserOwnedGroups,
   getGroupUsers,
   getSitesForGroup,
-  assignSiteToGroup,
+  assignGroupToSite,
   removeSiteFromGroup,
 } from "@/services/rbacService";
 import { Site } from "@/models/Site";
@@ -90,12 +90,12 @@ export default function Teams({
   );
 
   const toggleCheckbox = async (teamId: string, siteId: string) => {
-    const team = teams.find((team) => team.id === teamId);
-    const siteExists = team?.sites.some((site) => site.id === siteId);
+    const team: any = teams.find((team: any) => team.id === teamId);
+    const siteExists = team.sites.some((site: any) => site.id === siteId);
 
     if (!siteExists) {
       try {
-        await assignSiteToGroup(teamId, siteId);
+        await assignGroupToSite(teamId, siteId);
       } catch (error) {
         console.error("Failed to assign site to group:", error);
         return;
@@ -109,13 +109,13 @@ export default function Teams({
       }
     }
 
-    setTeams((prev) =>
-      prev.map((team) =>
+    setTeams((prev: any) =>
+      prev.map((team: any) =>
         team.id === teamId
           ? {
               ...team,
-              sites: team.sites.some((site) => site.id === siteId)
-                ? team.sites.filter((site) => site.id !== siteId)
+              sites: team.sites.some((site: any) => site.id === siteId)
+                ? team.sites.filter((site: any) => site.id !== siteId)
                 : [...team.sites, sites.find((site) => site.id === siteId)!],
             }
           : team
@@ -245,74 +245,74 @@ export default function Teams({
 
       {/* Members card */}
       {selectedTeam && (
-        <Card className="w-full"></Card>
+        <Card className="w-full">
           <CardHeader>
-        <CardTitle>Members</CardTitle>
-        <CardDescription>
-          Members are users with access to the selected team. Assign roles
-          to control their level of access and permissions.
-        </CardDescription>
+            <CardTitle>Members</CardTitle>
+            <CardDescription>
+              Members are users with access to the selected team. Assign roles
+              to control their level of access and permissions.
+            </CardDescription>
           </CardHeader>
           <CardContent className="pb-6">
-        <div className="flex flex-col gap-4">
-          {selectedTeam.members.map((member, index) => (
-            <div key={index} className="flex items-center justify-between">
-          <div className="flex items-center gap-3 flex-1">
-            <div className="w-9 h-9 bg-secondary rounded-full flex items-center justify-center">
-              <UserIcon className="w-4 h-4" />
-            </div>
-            <div className="flex flex-col">
-              <div className="font-medium text-foreground">
-            {member.name}
-              </div>
-              <div className="text-sm text-muted-foreground">
-            {member.email}
-              </div>
-            </div>
-          </div>
+            <div className="flex flex-col gap-4">
+              {selectedTeam.members.map((member, index) => (
+                <div key={index} className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 flex-1">
+                    <div className="w-9 h-9 bg-secondary rounded-full flex items-center justify-center">
+                      <UserIcon className="w-4 h-4" />
+                    </div>
+                    <div className="flex flex-col">
+                      <div className="font-medium text-foreground">
+                        {member.name}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {member.email}
+                      </div>
+                    </div>
+                  </div>
 
-          {!member.isEditable ? (
-            <div className="w-[131px] opacity-50">
-              <div className="flex items-center gap-3 px-3 py-2 bg-background rounded-md border-border">
-            <div className="flex-1 text-sm text-foreground">
-              {member.role}
+                  {!member.isEditable ? (
+                    <div className="w-[131px] opacity-50">
+                      <div className="flex items-center gap-3 px-3 py-2 bg-background rounded-md border-border">
+                        <div className="flex-1 text-sm text-foreground">
+                          {member.role}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <Select defaultValue={member.role}>
+                        <SelectTrigger className="w-[139px]">
+                          <SelectValue placeholder="Select role" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Owner">Owner</SelectItem>
+                          <SelectItem value="Manager">Manager</SelectItem>
+                          <SelectItem value="Viewer">Viewer</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="w-12 h-9"
+                          >
+                            <MoreHorizontalIcon className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem>Edit</DropdownMenuItem>
+                          <DropdownMenuItem className="text-red-500">
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </>
+                  )}
+                </div>
+              ))}
             </div>
-              </div>
-            </div>
-          ) : (
-            <>
-              <Select defaultValue={member.role}>
-            <SelectTrigger className="w-[139px]">
-              <SelectValue placeholder="Select role" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Owner">Owner</SelectItem>
-              <SelectItem value="Manager">Manager</SelectItem>
-              <SelectItem value="Viewer">Viewer</SelectItem>
-            </SelectContent>
-              </Select>
-              <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="w-12 h-9"
-              >
-                <MoreHorizontalIcon className="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem>Edit</DropdownMenuItem>
-              <DropdownMenuItem className="text-red-500">
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-              </DropdownMenu>
-            </>
-          )}
-            </div>
-          ))}
-        </div>
           </CardContent>
         </Card>
       )}

@@ -280,4 +280,34 @@ export class UserRepository {
       throw new Error("Database error");
     }
   }
+
+  async getSitesForGroup(groupId: number): Promise<any[]> {
+    try {
+      const result = await this.pool.query(
+        "SELECT sites.* FROM sites " +
+          "JOIN group_sites ON sites.id = group_sites.site_id " +
+          "WHERE group_sites.group_id = $1",
+        [groupId]
+      );
+      return result.rows;
+    } catch (error) {
+      console.error(`Error fetching sites for group (${groupId}):`, error);
+      throw new Error("Database error");
+    }
+  }
+
+  async removeSiteFromGroup(groupId: number, siteId: number): Promise<void> {
+    try {
+      await this.pool.query(
+        "DELETE FROM group_sites WHERE group_id = $1 AND site_id = $2",
+        [groupId, siteId]
+      );
+    } catch (error) {
+      console.error(
+        `Error removing site (${siteId}) from group (${groupId}):`,
+        error
+      );
+      throw new Error("Database error");
+    }
+  }
 }

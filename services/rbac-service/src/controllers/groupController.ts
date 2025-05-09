@@ -148,4 +148,37 @@ export class GroupController {
       res.status(500).json({ message: "Error fetching users in group", error });
     }
   }
+
+  async getSitesForGroup(req: Request, res: Response) {
+    logger.debug("Fetching sites for group");
+    const { id } = req.params;
+    try {
+      const sites = await this.userRepository.getSitesForGroup(Number(id));
+      logger.debug(`Fetched sites for group ${id} successfully`);
+      res.status(200).json(sites);
+    } catch (error) {
+      logger.error("Error fetching sites for group:", error);
+      res
+        .status(500)
+        .json({ message: "Error fetching sites for group", error });
+    }
+  }
+
+  async removeSiteFromGroup(req: Request, res: Response) {
+    logger.debug("Removing site from group");
+    const { groupId, siteId } = req.params;
+    try {
+      await this.userRepository.removeSiteFromGroup(
+        Number(groupId),
+        Number(siteId)
+      );
+      logger.debug(`Site ${siteId} removed from group ${groupId}`);
+      res.status(200).json({ message: "Site removed from group successfully" });
+    } catch (error) {
+      logger.error("Error removing site from group:", error);
+      res
+        .status(500)
+        .json({ message: "Error removing site from group", error });
+    }
+  }
 }
