@@ -46,7 +46,7 @@ CREATE TABLE public.roles (
     name VARCHAR(50) NOT NULL,
     description TEXT,
     permissions JSONB,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Groups of users
