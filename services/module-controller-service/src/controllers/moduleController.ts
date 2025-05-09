@@ -127,7 +127,7 @@ export class ModuleController {
       logger.info(`Module data found for module ${moduleId}`);
 
       res.status(200).json({
-        inputs: moduleData.resultData || {},
+        inputs: moduleData.data || {},
       });
     } catch (error) {
       logger.error("Error fetching module data:", error);
@@ -191,12 +191,12 @@ export class ModuleController {
         npmProcess.stdin.end();
 
         // Collect stdout
-        npmProcess.stdout.on("data", (data) => {
+        npmProcess.stdout.on("data", (data: any) => {
           stdout += data.toString();
         });
 
         // Collect stderr
-        npmProcess.stderr.on("data", (data) => {
+        npmProcess.stderr.on("data", (data: any) => {
           stderr += data.toString();
         });
 
@@ -205,7 +205,7 @@ export class ModuleController {
           stdout: string;
           stderr: string;
         }>((resolve, reject) => {
-          npmProcess.on("close", (code) => {
+          npmProcess.on("close", (code: any) => {
             if (code === 0 || code === null) {
               resolve({ stdout, stderr });
             } else {
@@ -213,7 +213,7 @@ export class ModuleController {
             }
           });
 
-          npmProcess.on("error", (err) => {
+          npmProcess.on("error", (err: any) => {
             reject(err);
           });
         });
@@ -269,7 +269,7 @@ export class ModuleController {
         siteId: parseInt(siteId),
         moduleId: parseInt(moduleId),
         timestamp: timestamp,
-        resultData: data,
+        data: data,
       });
       logger.info(
         `Result saved to database for site ${siteId} at ${timestamp.toISOString()}`

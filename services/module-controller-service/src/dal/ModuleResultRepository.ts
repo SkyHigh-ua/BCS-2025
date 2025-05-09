@@ -1,5 +1,5 @@
 import { Pool } from "pg";
-import { ModuleResult } from "../models/ModuleResultModels";
+import { ModuleResult } from "../models/ModuleModels";
 import logger from "../utils/logger";
 
 export class ModuleResultRepository {
@@ -124,7 +124,7 @@ export class ModuleResultRepository {
         siteId: res.rows[0].site_id,
         moduleId: res.rows[0].module_id,
         timestamp: res.rows[0].timestamp,
-        resultData: res.rows[0].result_data,
+        data: res.rows[0].result_data,
       };
     } catch (error) {
       logger.error(
@@ -158,7 +158,7 @@ export class ModuleResultRepository {
         siteId: res.rows[0].site_id,
         moduleId: res.rows[0].module_id,
         timestamp: res.rows[0].timestamp,
-        resultData: res.rows[0].result_data,
+        data: res.rows[0].result_data,
       };
     } catch (error) {
       logger.error(

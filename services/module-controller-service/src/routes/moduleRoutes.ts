@@ -1,6 +1,5 @@
 import { Router } from "express";
 import moduleController from "../controllers/moduleController";
-import { validateRole } from "../middleware/authMiddleware";
 import { fetchModuleInfo } from "../middleware/fetchModuleMiddleware";
 import { ensureModuleRepo } from "../middleware/moduleMiddleware";
 
