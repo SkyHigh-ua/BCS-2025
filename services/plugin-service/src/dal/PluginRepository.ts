@@ -52,7 +52,7 @@ export class PluginRepository {
     tags: string[];
   }): Promise<any> {
     const query = `
-      INSERT INTO public.plugins (name, description, requirements, repo_link, fqdn, outputs, tags, created_at, updated_at)
+      INSERT INTO public.plugins (name, description, requirements, repo_link, fqdn, outputs, tags)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING *;
     `;
@@ -64,8 +64,6 @@ export class PluginRepository {
       plugin.fqdn || null,
       plugin.outputs || null,
       plugin.tags,
-      new Date(),
-      new Date(),
     ];
     const result = await this.pool.query(query, values);
     return result.rows[0];
@@ -83,33 +81,22 @@ export class PluginRepository {
       tags?: string[];
     }
   ): Promise<any> {
-    const query = `
-      UPDATE public.plugins
-      SET 
-        name = COALESCE($1, name),
-        description = COALESCE($2, description),
-        requirements = COALESCE($3, requirements),
-        repo_link = COALESCE($4, repo_link),
-        fqdn = COALESCE($5, fqdn),
-        outputs = COALESCE($6, outputs),
-        tags = COALESCE($7, tags),
-        updated_at = $8
-      WHERE id = $9
-      RETURNING *;
-    `;
-    const values = [
-      plugin.name,
-      plugin.description,
-      plugin.requirements,
-      plugin.repoLink,
-      plugin.fqdn,
-      plugin.outputs,
-      plugin.tags,
-      new Date(),
-      pluginId,
-    ];
-    const result = await this.pool.query(query, values);
-    return result.rows[0];
+    try {
+      const fields = Object.keys(plugin)
+        .map((key, index) => `${key} = $${index + 1}`)
+        .join(", ");
+      const values = Object.values(plugin);
+      const result = await this.pool.query(
+        `UPDATE roles SET ${fields} WHERE id = $${
+          values.length + 1
+        } RETURNING *`,
+        [...values, pluginId]
+      );
+      return result.rows[0] || null;
+    } catch (error) {
+      console.error(`Error updating plugin (${pluginId}):`, error);
+      throw new Error("Database error");
+    }
   }
 
   async deletePlugin(id: string): Promise<void> {
@@ -136,7 +123,7 @@ export class PluginRepository {
   async findPluginsByTags(tags: string[]): Promise<any[]> {
     const query = `
       SELECT * FROM public.plugins
-      WHERE $1 && tags;
+      WHERE tags && $1::text[];
     `;
     const values = [tags];
     const result = await this.pool.query(query, values);

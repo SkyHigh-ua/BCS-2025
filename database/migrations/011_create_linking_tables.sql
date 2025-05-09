@@ -1,17 +1,8 @@
--- Users of the group
+-- Users of a group
 CREATE TABLE public.user_groups (
     id SERIAL PRIMARY KEY,
     user_id INT NOT NULL,
-    group_id INT NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE,
-    FOREIGN KEY (group_id) REFERENCES public.groups(id) ON DELETE CASCADE
-);
-
--- Roles of the user
-CREATE TABLE public.user_roles (
-    id SERIAL PRIMARY KEY,
-    user_id INT NOT NULL,
-    role_id INT NOT NULL,
+    role_id INT DEFAULT 0,
     group_id INT DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE,
@@ -58,8 +49,10 @@ CREATE TABLE public.module_parents (
 
 CREATE TABLE public.site_data (
     id SERIAL PRIMARY KEY,
+    site_id INT NOT NULL,
     module_id INT NOT NULL,
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     data JSONB NOT NULL,
+    FOREIGN KEY (site_id) REFERENCES public.sites(id) ON DELETE CASCADE,
     FOREIGN KEY (module_id) REFERENCES public.site_modules(id) ON DELETE CASCADE
 );

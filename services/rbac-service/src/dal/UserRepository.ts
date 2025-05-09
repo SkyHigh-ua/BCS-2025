@@ -19,21 +19,6 @@ export class UserRepository {
     });
   }
 
-  async assignRoleToUser(userId: number, roleId: number): Promise<void> {
-    try {
-      await this.pool.query(
-        "INSERT INTO user_roles (user_id, role_id) VALUES ($1, $2)",
-        [userId, roleId]
-      );
-    } catch (error) {
-      console.error(
-        `Error assigning role (${roleId}) to user (${userId}):`,
-        error
-      );
-      throw new Error("Database error");
-    }
-  }
-
   async assignGroupToUser(userId: number, groupId: number): Promise<void> {
     try {
       await this.pool.query(
@@ -49,11 +34,15 @@ export class UserRepository {
     }
   }
 
-  async createGroup(name: string, description: string): Promise<Group> {
+  async createGroup(
+    name: string,
+    description: string,
+    userId: number
+  ): Promise<Group> {
     try {
       const result = await this.pool.query(
-        "INSERT INTO groups (name, description) VALUES ($1, $2) RETURNING *",
-        [name, description]
+        "INSERT INTO groups (name, description, author) VALUES ($1, $2, $3) RETURNING *",
+        [name, description, userId]
       );
       return result.rows[0];
     } catch (error) {
@@ -116,11 +105,15 @@ export class UserRepository {
     }
   }
 
-  async createRole(name: string, description: string): Promise<Role> {
+  async createRole(
+    name: string,
+    description: string,
+    permissions: any
+  ): Promise<Role> {
     try {
       const result = await this.pool.query(
-        "INSERT INTO roles (name, description) VALUES ($1, $2) RETURNING *",
-        [name, description]
+        "INSERT INTO roles (name, description, permissions) VALUES ($1, $2, $3) RETURNING *",
+        [name, description, permissions]
       );
       return result.rows[0];
     } catch (error) {
@@ -180,27 +173,12 @@ export class UserRepository {
     }
   }
 
-  async assignRoleToGroup(groupId: number, roleId: number): Promise<void> {
-    try {
-      await this.pool.query(
-        "INSERT INTO group_roles (group_id, role_id) VALUES ($1, $2)",
-        [groupId, roleId]
-      );
-    } catch (error) {
-      console.error(
-        `Error assigning role (${roleId}) to group (${groupId}):`,
-        error
-      );
-      throw new Error("Database error");
-    }
-  }
-
   async getRolesForUser(userId: number): Promise<any[]> {
     try {
       const result = await this.pool.query(
         "SELECT roles.* FROM roles " +
-          "JOIN user_roles ON roles.id = user_roles.role_id " +
-          "WHERE user_roles.user_id = $1",
+          "JOIN user_groups ON roles.id = user_groups.role_id " +
+          "WHERE user_groups.user_id = $1",
         [userId]
       );
       return result.rows;
@@ -214,8 +192,8 @@ export class UserRepository {
     try {
       const result = await this.pool.query(
         "SELECT roles.* FROM roles " +
-          "JOIN group_roles ON roles.id = group_roles.role_id " +
-          "WHERE group_roles.group_id = $1",
+          "JOIN user_groups ON roles.id = user_groups.role_id " +
+          "WHERE user_groups.group_id = $1",
         [groupId]
       );
       return result.rows;
@@ -229,8 +207,8 @@ export class UserRepository {
     try {
       const result = await this.pool.query(
         "SELECT roles.* FROM roles " +
-          "JOIN group_roles ON roles.id = group_roles.role_id " +
-          "JOIN group_sites ON group_roles.group_id = group_sites.group_id " +
+          "JOIN user_groups ON roles.id = user_groups.role_id " +
+          "JOIN group_sites ON user_groups.group_id = group_sites.group_id " +
           "WHERE group_sites.site_id = $1",
         [siteId]
       );
@@ -244,7 +222,7 @@ export class UserRepository {
   async getGroupsOwnedByUser(userId: number): Promise<Group[]> {
     try {
       const result = await this.pool.query(
-        "SELECT * FROM groups WHERE owner_id = $1",
+        "SELECT * FROM groups WHERE author = $1",
         [userId]
       );
       return result.rows;
@@ -261,7 +239,7 @@ export class UserRepository {
   ): Promise<void> {
     try {
       await this.pool.query(
-        "INSERT INTO user_roles (user_id, role_id, group_id) VALUES ($1, $2, $3)",
+        "UPDATE user_groups SET role_id = $2 WHERE user_id = $1 AND group_id = $3",
         [userId, roleId, groupId]
       );
     } catch (error) {

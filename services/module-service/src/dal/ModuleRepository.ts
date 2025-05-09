@@ -47,7 +47,7 @@ export class ModuleRepository {
   ): Promise<Module> {
     try {
       const result = await this.pool.query(
-        `INSERT INTO modules (name, description, repo_link, inputs, outputs, tags, created_at, updated_at)
+        `INSERT INTO modules (name, description, repo_link, inputs, outputs, tags)
          VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
         [
           module.name,

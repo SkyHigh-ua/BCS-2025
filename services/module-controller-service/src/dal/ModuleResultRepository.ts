@@ -22,9 +22,9 @@ export class ModuleResultRepository {
   async saveModuleResult(result: ModuleResult): Promise<ModuleResult> {
     try {
       const query = `
-        INSERT INTO module_results (site_id, module_id, timestamp, result_data)
+        INSERT INTO site_data (site_id, module_id, timestamp, data)
         VALUES ($1, $2, $3, $4)
-        RETURNING id, site_id, module_id, timestamp, result_data
+        RETURNING id, site_id, module_id, timestamp, data
       `;
 
       const values = [
@@ -52,8 +52,8 @@ export class ModuleResultRepository {
   async getResultsBySiteId(siteId: number): Promise<ModuleResult[]> {
     try {
       const query = `
-        SELECT id, site_id, module_id, timestamp, result_data
-        FROM module_results
+        SELECT id, site_id, module_id, timestamp, data
+        FROM site_data
         WHERE site_id = $1
         ORDER BY timestamp DESC
       `;
@@ -76,8 +76,8 @@ export class ModuleResultRepository {
   async getResultsByModuleId(moduleId: number): Promise<ModuleResult[]> {
     try {
       const query = `
-        SELECT id, site_id, module_id, timestamp, result_data
-        FROM module_results
+        SELECT id, site_id, module_id, timestamp, data
+        FROM site_data
         WHERE module_id = $1
         ORDER BY timestamp DESC
       `;
@@ -106,8 +106,8 @@ export class ModuleResultRepository {
   ): Promise<ModuleResult | null> {
     try {
       const query = `
-        SELECT id, site_id, module_id, timestamp, result_data
-        FROM module_results
+        SELECT id, site_id, module_id, timestamp, data
+        FROM site_data
         WHERE site_id = $1 AND module_id = $2
         ORDER BY timestamp DESC
         LIMIT 1
@@ -140,7 +140,7 @@ export class ModuleResultRepository {
   ): Promise<ModuleResult | null> {
     try {
       const query = `
-        SELECT id, site_id, module_id, timestamp, result_data
+        SELECT id, site_id, module_id, timestamp, data
         FROM module_results
         WHERE module_id = $1
         ORDER BY timestamp DESC

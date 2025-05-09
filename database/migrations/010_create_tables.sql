@@ -45,7 +45,6 @@ CREATE TABLE public.roles (
     id SERIAL PRIMARY KEY,
     name VARCHAR(50) NOT NULL,
     description TEXT,
-    author INT NOT NULL,
     permissions JSONB,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (author) REFERENCES public.users(id) ON DELETE CASCADE
@@ -56,6 +55,7 @@ CREATE TABLE public.groups (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     description TEXT,
+    author INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
