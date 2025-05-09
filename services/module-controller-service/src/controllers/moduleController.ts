@@ -171,35 +171,67 @@ export class ModuleController {
       }
 
       try {
-        logger.info(`Compiling TypeScript file: ${moduleFiles.moduleTs}`);
-        await execPromise(
-          `cd ${moduleDir} && npx tsc ${moduleFiles.moduleTs} --esModuleInterop --skipLibCheck`
-        );
+        logger.info(`Installing dependencies for module ${moduleId}`);
+        await execPromise(`cd ${moduleDir} && npm install`);
 
-        const inputFilePath = path.join(moduleDir, "input.json");
-        fs.writeFileSync(inputFilePath, JSON.stringify(inputs, null, 2));
+        logger.info(`Executing module via npm with stdin input`);
 
-        const jsFile = moduleFiles.moduleTs.replace(".ts", ".js");
-        logger.info(
-          `Executing module: ${jsFile} with inputs from ${inputFilePath}`
-        );
+        // Convert inputs to JSON string
+        const inputsJson = JSON.stringify(inputs, null, 2);
 
-        const { stdout, stderr } = await execPromise(
-          `cd ${moduleDir} && node ${jsFile} ${inputFilePath}`
-        );
+        // Use spawn to enable stdin piping
+        const { spawn } = require("child_process");
+        const npmProcess = spawn("npm", ["start"], { cwd: moduleDir });
 
-        if (stderr) {
-          logger.warn(`Module execution produced warnings/errors: ${stderr}`);
+        let stdout = "";
+        let stderr = "";
+
+        // Pipe inputs to the process
+        npmProcess.stdin.write(inputsJson);
+        npmProcess.stdin.end();
+
+        // Collect stdout
+        npmProcess.stdout.on("data", (data) => {
+          stdout += data.toString();
+        });
+
+        // Collect stderr
+        npmProcess.stderr.on("data", (data) => {
+          stderr += data.toString();
+        });
+
+        // Handle process completion
+        const processResult = await new Promise<{
+          stdout: string;
+          stderr: string;
+        }>((resolve, reject) => {
+          npmProcess.on("close", (code) => {
+            if (code === 0 || code === null) {
+              resolve({ stdout, stderr });
+            } else {
+              reject(new Error(`Module execution failed with code ${code}`));
+            }
+          });
+
+          npmProcess.on("error", (err) => {
+            reject(err);
+          });
+        });
+
+        if (processResult.stderr) {
+          logger.warn(
+            `Module execution produced warnings/errors: ${processResult.stderr}`
+          );
         }
 
         let result;
         try {
-          result = JSON.parse(stdout);
+          result = JSON.parse(processResult.stdout);
         } catch (error) {
           logger.warn(
             `Could not parse module output as JSON, returning raw output`
           );
-          result = { output: stdout };
+          result = { output: processResult.stdout };
         }
 
         if (this.repoCache[moduleId]) {

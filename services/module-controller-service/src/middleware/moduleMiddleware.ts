@@ -122,6 +122,18 @@ export const getModuleDirectory = async (
   try {
     await execPromise(`git clone ${repoLink} ${tempDir}`);
 
+    // Install dependencies
+    logger.info(`Installing dependencies for module ${moduleId}`);
+    try {
+      await execPromise(`cd ${tempDir} && npm install`);
+      logger.info(`Successfully installed dependencies for module ${moduleId}`);
+    } catch (npmError) {
+      logger.warn(
+        `Error installing dependencies: ${npmError}. Continuing anyway.`
+      );
+      // We continue even if npm install fails, as the module might not need dependencies
+    }
+
     // If moduleFolder is specified, create the final directory and copy only that folder
     let moduleDir = tempDir;
 
