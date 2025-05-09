@@ -31,17 +31,12 @@ interface SiteResults {
 export class ModuleController {
   private moduleServiceUrl: string;
   private repoCache: RepoCache;
-  private moduleRepository: ModuleRepository;
   private moduleResultRepository: ModuleResultRepository;
 
-  constructor(
-    moduleRepository: ModuleRepository,
-    moduleResultRepository?: ModuleResultRepository
-  ) {
+  constructor(moduleResultRepository?: ModuleResultRepository) {
     this.moduleServiceUrl =
       process.env.MODULE_SERVICE_URL || "http://module-service:5008";
     this.repoCache = {};
-    this.moduleRepository = moduleRepository;
     this.moduleResultRepository =
       moduleResultRepository || new ModuleResultRepository();
     this.initialize();
@@ -57,45 +52,6 @@ export class ModuleController {
     return this.repoCache;
   }
 
-  async getAllModules(req: Request, res: Response): Promise<void> {
-    try {
-      const modules = await this.moduleRepository.getAllModules();
-      res.status(200).json(modules);
-    } catch (error) {
-      logger.error("Error fetching all modules:", error);
-      res.status(500).json({ message: "Error fetching modules", error });
-    }
-  }
-
-  async getModuleById(req: Request, res: Response): Promise<void> {
-    try {
-      const { id } = req.params;
-      const module = await this.moduleRepository.getModuleById(id);
-
-      if (!module) {
-        return res.status(404).json({ message: "Module not found" });
-      }
-
-      res.status(200).json(module);
-    } catch (error) {
-      logger.error(`Error fetching module by id ${req.params.id}:`, error);
-      res.status(500).json({ message: "Error fetching module", error });
-    }
-  }
-
-  async createModule(req: Request, res: Response): Promise<void> {
-    // Implementation as needed for creation endpoints
-  }
-
-  async updateModule(req: Request, res: Response): Promise<void> {
-    // Implementation as needed for update endpoints
-  }
-
-  async deleteModule(req: Request, res: Response): Promise<void> {
-    // Implementation as needed for delete endpoints
-  }
-
-  // Get widget component from the module repository
   async getWidgetComponent(req: Request, res: Response): Promise<void> {
     try {
       const { moduleId } = req.params;
@@ -103,29 +59,26 @@ export class ModuleController {
 
       if (!moduleDir) {
         logger.error(`Module directory not found for module ${moduleId}`);
-        return res
-          .status(500)
-          .json({ message: "Module directory not available" });
+        res.status(500).json({ message: "Module directory not available" });
+        return;
       }
 
-      // Find the widget.tsx file
       const moduleFiles = await findModuleFile(moduleDir);
 
       if (!moduleFiles.widgetTs) {
         logger.error(
           `Widget.tsx file not found in repository for module ${moduleId}`
         );
-        return res
+        res
           .status(404)
           .json({ message: "Widget component not found in repository" });
+        return;
       }
 
-      // Read the widget.tsx file
       const widgetContent = fs.readFileSync(moduleFiles.widgetTs, "utf8");
 
       logger.info(`Widget component found and read for module ${moduleId}`);
 
-      // Return just the widget component content
       res.status(200).json({
         component: widgetContent,
       });
@@ -138,26 +91,23 @@ export class ModuleController {
     }
   }
 
-  // Get saved data for a module
   async getModuleData(req: Request, res: Response): Promise<void> {
     try {
       const { moduleId, siteId } = req.params;
 
       if (!moduleId) {
-        return res.status(400).json({ message: "Module ID is required" });
+        res.status(400).json({ message: "Module ID is required" });
+        return;
       }
 
-      // Fetch the latest module data from the database
       let moduleData = null;
 
       if (siteId) {
-        // If siteId is provided, get site-specific data
         moduleData = await this.moduleResultRepository.getLatestModuleResult(
           parseInt(siteId),
           parseInt(moduleId)
         );
       } else {
-        // Without siteId, get the latest data for this module across all sites
         moduleData =
           await this.moduleResultRepository.getLatestModuleResultByModuleId(
             parseInt(moduleId)
@@ -170,12 +120,12 @@ export class ModuleController {
             siteId ? `and site ${siteId}` : ""
           }`
         );
-        return res.status(200).json({ inputs: {} }); // Return empty inputs
+        res.status(200).json({ inputs: {} });
+        return;
       }
 
       logger.info(`Module data found for module ${moduleId}`);
 
-      // Return the module data
       res.status(200).json({
         inputs: moduleData.resultData || {},
       });
@@ -198,9 +148,8 @@ export class ModuleController {
     try {
       if (!moduleDir) {
         logger.error(`Module directory not found for module ${moduleId}`);
-        return res
-          .status(500)
-          .json({ message: "Module directory not available" });
+        res.status(500).json({ message: "Module directory not available" });
+        return;
       }
 
       const inputs = await this.prepareModuleInputs(
@@ -209,19 +158,18 @@ export class ModuleController {
         customInputs
       );
 
-      // Find the module.ts file
       const moduleFiles = await findModuleFile(moduleDir);
 
       if (!moduleFiles.moduleTs) {
         logger.error(
           `Module.ts file not found in repository for module ${moduleId}`
         );
-        return res
+        res
           .status(404)
           .json({ message: "Module.ts file not found in repository" });
+        return;
       }
 
-      // Execute the module.ts file
       try {
         logger.info(`Compiling TypeScript file: ${moduleFiles.moduleTs}`);
         await execPromise(
@@ -254,12 +202,9 @@ export class ModuleController {
           result = { output: stdout };
         }
 
-        // Update last accessed time for this cached module
         if (this.repoCache[moduleId]) {
           this.repoCache[moduleId].lastAccessed = new Date();
         }
-
-        // Save result to database
         await this.saveResult(siteId, moduleId, result);
 
         logger.info(`Module execution completed successfully`);
@@ -268,8 +213,7 @@ export class ModuleController {
         logger.error(`Error executing module: ${error}`);
         res.status(500).json({
           message: "Error executing module",
-          error: error.message,
-          details: error.stderr || error.stdout,
+          error: error instanceof Error ? error.message : String(error),
         });
       }
     } catch (error) {
@@ -280,7 +224,6 @@ export class ModuleController {
     }
   }
 
-  // Save the module execution result to database only
   async saveResult(siteId: string, moduleId: string, data: any): Promise<void> {
     if (!siteId) {
       logger.warn("No siteId provided, skipping result saving");
@@ -289,7 +232,6 @@ export class ModuleController {
 
     const timestamp = new Date();
 
-    // Save to database
     try {
       await this.moduleResultRepository.saveModuleResult({
         siteId: parseInt(siteId),
@@ -348,39 +290,43 @@ export class ModuleController {
     logger.info(`Cloning repository from ${repoLink}`);
     try {
       await execPromise(`git clone ${repoLink} ${tempDir}`);
-      
+
       // If moduleFolder is specified, create the final directory and copy only that folder
       let moduleDir = tempDir;
-      
+
       if (moduleFolder) {
         const sourcePath = path.join(tempDir, moduleFolder);
-        
+
         // Check if the specified folder exists in the repo
         if (!fs.existsSync(sourcePath)) {
-          logger.error(`Module folder '${moduleFolder}' not found in repository`);
+          logger.error(
+            `Module folder '${moduleFolder}' not found in repository`
+          );
           return null;
         }
-        
+
         // Create a new directory with only the specified module folder
         moduleDir = path.join(
           MODULE_BASE_DIR,
           `module-${moduleId}-folder-${Date.now()}`
         );
-        
+
         if (!fs.existsSync(moduleDir)) {
           fs.mkdirSync(moduleDir, { recursive: true });
         }
-        
+
         // Copy the specified folder to the new directory
         logger.info(`Copying module folder '${moduleFolder}' to ${moduleDir}`);
-        
+
         // Use cp -r for recursive copy (works on macOS and Linux)
         await execPromise(`cp -r ${sourcePath}/* ${moduleDir}/`);
-        
+
         // Clean up the temporary clone directory
         fs.rmSync(tempDir, { recursive: true, force: true });
-        
-        logger.info(`Successfully copied module folder and cleaned up temp directory`);
+
+        logger.info(
+          `Successfully copied module folder and cleaned up temp directory`
+        );
       }
 
       // Add to cache
@@ -447,13 +393,16 @@ export class ModuleController {
         );
 
         if (pluginsResponse.data && Array.isArray(pluginsResponse.data)) {
-          const plugins = {};
-          const pluginOutputs = {};
+          const plugins: Record<
+            string,
+            { id: number; name: string; requirements: any; fqdn: string | null }
+          > = {};
+          const pluginOutputs: Record<string, any> = {};
 
           // Process plugin data and extract plugin outputs
           pluginsResponse.data.forEach((plugin) => {
             // Add plugin info to the plugins collection
-            plugins[plugin.name] = {
+            plugins[plugin.name as string] = {
               id: plugin.id,
               name: plugin.name,
               requirements: plugin.requirements,
@@ -462,7 +411,7 @@ export class ModuleController {
 
             // If plugin has outputs, add them to the dedicated outputs collection
             if (plugin.outputs) {
-              pluginOutputs[plugin.name] = plugin.outputs;
+              pluginOutputs[plugin.name as string] = plugin.outputs;
             }
           });
 
@@ -478,15 +427,13 @@ export class ModuleController {
         }
       } catch (pluginError) {
         logger.warn(
-          `Failed to fetch plugin data for site ${siteId}: ${pluginError.message}`
+          `Failed to fetch plugin data for site ${siteId}: ${pluginError}`
         );
-        // Continue execution even if plugin data fetch fails
       }
     } catch (siteError) {
       logger.warn(
-        `Failed to fetch site information for site ${siteId}: ${siteError.message}`
+        `Failed to fetch site information for site ${siteId}: ${siteError}`
       );
-      // Continue execution with whatever inputs we have
     }
 
     logger.debug(`Prepared combined inputs for module execution:`, inputs);
@@ -526,13 +473,7 @@ export class ModuleController {
   }
 }
 
-// Create singleton instance with dependencies
-const moduleRepository = new ModuleRepository();
 const moduleResultRepository = new ModuleResultRepository();
-const moduleController = new ModuleController(
-  moduleRepository,
-  moduleResultRepository
-);
+const moduleController = new ModuleController(moduleResultRepository);
 
-// Export the singleton controller instance
 export default moduleController;
