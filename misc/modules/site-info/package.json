@@ -1,7 +1,7 @@
 {
-  "name": "uptime-module",
+  "name": "site-info",
   "version": "1.0.0",
-  "description": "Module for checking site uptime",
+  "description": "Module for checking site information",
   "main": "module.ts",
   "scripts": {
     "start": "ts-node module.ts",

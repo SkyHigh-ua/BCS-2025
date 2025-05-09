@@ -1,6 +1,4 @@
 import https from "https";
-import fs from "fs";
-import path from "path";
 
 function checkSiteStatus(url: string): Promise<boolean> {
   return new Promise((resolve) => {
@@ -16,14 +14,26 @@ function checkSiteStatus(url: string): Promise<boolean> {
   });
 }
 
-const inputsPath = path.join(__dirname, "inputs.json");
-const inputs = JSON.parse(fs.readFileSync(inputsPath, "utf-8"));
-const siteUrl = inputs.domain;
+let inputData = "";
 
-checkSiteStatus(siteUrl)
-  .then((isUp) => {
-    console.log(`${siteUrl} is ${isUp ? "up" : "down"}`);
-  })
-  .catch((err) => {
-    console.error("Error checking site status:", err);
-  });
+process.stdin.on("data", (chunk) => {
+  inputData += chunk.toString();
+});
+
+process.stdin.on("end", async () => {
+  try {
+    const inputs = JSON.parse(inputData);
+    const siteUrl = inputs.site?.domain;
+
+    if (!siteUrl) {
+      console.error('{"error": "No site domain provided in input"}');
+      process.exit(1);
+    }
+
+    const isUp = await checkSiteStatus(siteUrl);
+    console.log(`{"uptimeData": ${isUp ? '"1"' : '"0"'}}`);
+  } catch (err) {
+    console.error('{"error": "Invalid input data"}');
+    process.exit(1);
+  }
+});
