@@ -10,10 +10,19 @@ export class GroupController {
   }
 
   async createGroup(req: Request, res: Response) {
+    if (!req.user || !("id" in req.user)) {
+      logger.info(`[${req.method}] ${req.url} - 401: User not authenticated`);
+      return res.status(401).json({ message: "User not authenticated" });
+    }
     logger.debug("Creating group");
     const { name, description } = req.body;
+    const userId = req.user.id;
     try {
-      const group = await this.userRepository.createGroup(name, description);
+      const group = await this.userRepository.createGroup(
+        name,
+        description,
+        userId
+      );
       logger.debug(`Group ${name} created successfully`);
       res.status(201).json(group);
     } catch (error) {
