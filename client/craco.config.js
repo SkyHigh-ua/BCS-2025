@@ -1,4 +1,5 @@
 const path = require("path");
+const webpack = require("webpack");
 
 module.exports = {
   webpack: {
@@ -11,7 +12,12 @@ module.exports = {
       "@/services": path.resolve(__dirname, "./src/services"),
       "@/pages": path.resolve(__dirname, "./src/pages"),
       "@/assets": path.resolve(__dirname, "./src/assets"),
-      "@/models": path.resolve(__dirname, "./src/assets"),
+      "@/models": path.resolve(__dirname, "./src/models"),
     },
+    plugins: [
+      new webpack.DefinePlugin({
+        "process.env": JSON.stringify(process.env),
+      }),
+    ],
   },
 };
