@@ -1,0 +1,21 @@
+{
+  "name": "uptime",
+  "description": "A module to check the uptime of a system.",
+  "inputs": {
+    "site": {
+      "domain": {
+        "type": "string",
+        "description": "The domain to check uptime for"
+      }
+    }
+  },
+  "outputs": {
+    "uptimeData": {
+      "overall": {
+        "type": "string",
+        "description": "Status of the system uptime"
+      }
+  },
+  "tags": ["uptime"],
+  "requirements": []
+}
