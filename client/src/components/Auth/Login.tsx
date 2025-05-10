@@ -23,7 +23,7 @@ const LoginForm: React.FC = () => {
     try {
       const data = await login(email, password);
       if (data) {
-        localStorage.setItem("jwt", data);
+        localStorage.setItem("jwt", data.token);
       }
       navigate("/dashboard");
     } catch (err) {

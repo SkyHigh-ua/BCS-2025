@@ -20,6 +20,21 @@ const Dashboard: React.FC = () => {
       return;
     }
 
+    try {
+      const payload = JSON.parse(atob(jwt.split(".")[1]));
+      const isExpired = payload.exp * 1000 < Date.now();
+      if (isExpired) {
+        localStorage.removeItem("jwt");
+        navigate("/");
+        return;
+      }
+    } catch (error) {
+      console.error("Invalid JWT:", error);
+      localStorage.removeItem("jwt");
+      navigate("/");
+      return;
+    }
+
     const fetchDashboardData = async () => {
       try {
         const [userData, userSites] = await Promise.all([
