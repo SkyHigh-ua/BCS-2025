@@ -90,7 +90,7 @@ export class AuthController {
       if (company) {
         const groupResponse = await axios.post(
           `${process.env.RBAC_SERVICE_URL}/groups/`,
-          { companyName: company },
+          { name: company, description: company },
           {
             headers: {
               Authorization: `Bearer ${login_token}`,
@@ -98,19 +98,6 @@ export class AuthController {
           }
         );
         const groupId = groupResponse.data.id;
-
-        await axios.post(
-          `${process.env.RBAC_SERVICE_URL}/groups/assign`,
-          {
-            userId: user.id,
-            groupId: groupId,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${login_token}`,
-            },
-          }
-        );
 
         logger.info(
           `[${req.method}] ${req.url} - Group created and assigned for company: ${company}`

@@ -25,7 +25,7 @@ const AddSiteForm: React.FC<{
   const [url, setUrl] = useState(initialData.url);
   const [name, setName] = useState(initialData.name);
   const [monitoringType, setMonitoringType] = useState(
-    initialData.monitoringType
+    initialData.monitoringType || "none"
   );
   const [plugins, setPlugins] = useState<{ id: string; name: string }[]>([]);
 

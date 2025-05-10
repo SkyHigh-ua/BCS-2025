@@ -9,7 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { signup } from "@/services/authService";
 import { createSite } from "@/services/siteService";
 import { assignModules } from "@/services/moduleService";
-import { assignPluginToSite } from "../../services/pluginService";
+import { assignPluginToSite } from "@/services/pluginService";
 
 const Signup: React.FC = () => {
   const [stage, setStage] = useState(1);
@@ -49,12 +49,18 @@ const Signup: React.FC = () => {
 
         const { url, name, pluginId } = formData.siteInfo;
         const descrciption = `Site created by ${firstName} ${lastName}`;
-        const siteResponse = await createSite({ url, name, descrciption });
+        const siteResponse = await createSite({
+          domain: url,
+          name,
+          descrciption,
+        });
         setSiteId(siteResponse.id);
-        const pluginResponse = await assignPluginToSite(
-          pluginId,
-          siteResponse.id
-        );
+        if (pluginId) {
+          const pluginResponse = await assignPluginToSite(
+            pluginId,
+            siteResponse.id
+          );
+        }
       } catch (error) {
         console.error("Error creating user or site:", error);
         return;
