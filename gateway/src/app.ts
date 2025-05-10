@@ -6,14 +6,16 @@ import logger from "./utils/logger";
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    credentials: true,
+  })
+);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-app.use((req, res, next) => {
-  logger.info(`${req.method} ${req.url}`);
-  next();
-});
 
 app.use(
   "/api/user",
@@ -54,8 +56,13 @@ app.use(
 );
 
 app.use((err: any, req: any, res: any, next: any) => {
-  logger.error("Error:", err.stack || err.message || err);
-  res.status(500).json({ message: "Internal Server Error" });
+  logger.error(err.stack || err.message || err);
+
+  const statusCode = err.statusCode || 500;
+  res.status(statusCode).json({
+    message: err.message || "Internal Server Error",
+    error: process.env.NODE_ENV === "dev" ? err.stack : undefined,
+  });
 });
 
 app.listen(PORT, () => {
