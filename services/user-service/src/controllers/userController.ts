@@ -54,7 +54,7 @@ export class UserController {
   }
 
   async createUser(req: Request, res: Response) {
-    const { first_name, last_name, email, password, role, company } = req.body;
+    const { first_name, last_name, email, password, role } = req.body;
     try {
       const user = await this.userRepository.createUser(
         first_name,
@@ -63,23 +63,6 @@ export class UserController {
         password,
         role
       );
-
-      if (company) {
-        const groupResponse = await axios.post(
-          `${process.env.RBAC_SERVICE_URL}/groups/`,
-          { companyName: company }
-        );
-        const groupId = groupResponse.data.id;
-
-        await axios.post(`${process.env.RBAC_SERVICE_URL}/groups/assign`, {
-          userId: user.id,
-          groupId: groupId,
-        });
-
-        logger.info(
-          `[${req.method}] ${req.url} - Group created and assigned for company: ${company}`
-        );
-      }
 
       logger.info(`[${req.method}] ${req.url} - 201: User created`);
       res.status(201).json(user);

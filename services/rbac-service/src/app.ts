@@ -8,9 +8,11 @@ const PORT = process.env.PORT || 5003;
 
 app.use(
   cors({
-    origin: [process.env.GATEWAY_URL, process.env.USER_SERVICE_URL].filter(
-      (url): url is string => !!url
-    ),
+    origin: [
+      process.env.GATEWAY_URL,
+      process.env.AUTH_SERVICE_URL,
+      process.env.USER_SERVICE_URL,
+    ].filter((url): url is string => !!url),
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   })

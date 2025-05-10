@@ -70,7 +70,6 @@ export class AuthController {
           email,
           password: hashedPassword,
           role: 1,
-          company,
         },
         {
           headers: {
@@ -87,6 +86,36 @@ export class AuthController {
         process.env.JWT_SECRET!,
         { expiresIn: "24h" }
       );
+
+      if (company) {
+        const groupResponse = await axios.post(
+          `${process.env.RBAC_SERVICE_URL}/groups/`,
+          { companyName: company },
+          {
+            headers: {
+              Authorization: `Bearer ${login_token}`,
+            },
+          }
+        );
+        const groupId = groupResponse.data.id;
+
+        await axios.post(
+          `${process.env.RBAC_SERVICE_URL}/groups/assign`,
+          {
+            userId: user.id,
+            groupId: groupId,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${login_token}`,
+            },
+          }
+        );
+
+        logger.info(
+          `[${req.method}] ${req.url} - Group created and assigned for company: ${company}`
+        );
+      }
 
       logger.info(
         `[${req.method}] ${req.url} - 201: User with email ${email} registered successfully`
