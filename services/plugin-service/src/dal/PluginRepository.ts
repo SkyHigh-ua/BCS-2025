@@ -123,7 +123,7 @@ export class PluginRepository {
   async findPluginsByTags(tags: string[]): Promise<any[]> {
     const query = `
       SELECT * FROM public.plugins
-      WHERE tags && $1::text[];
+      WHERE tags && $1::varchar[];
     `;
     const values = [tags];
     const result = await this.pool.query(query, values);

@@ -35,13 +35,13 @@ const Signup: React.FC = () => {
       try {
         const { email, password } = formData.registration;
         const { firstName, lastName, companyName } = formData.personalInfo;
-        const signupResponse = await signup({
+        const signupResponse = await signup(
           email,
           password,
           firstName,
           lastName,
-          companyName,
-        });
+          companyName
+        );
 
         if (signupResponse.login_token) {
           localStorage.setItem("jwt", signupResponse.login_token);

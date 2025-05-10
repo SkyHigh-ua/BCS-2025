@@ -5,7 +5,7 @@ export const createProxyMiddleware = (serviceUrl: string) => {
   return proxy({
     target: serviceUrl,
     changeOrigin: true,
-    pathRewrite: (path, req) => path.replace(/\/api\/[^/]+\//, ""),
+    pathRewrite: (path, req) => path.replace(/\/api\/[^/]+\//, "/"),
     logLevel: "debug",
     logProvider: () => logger,
   });

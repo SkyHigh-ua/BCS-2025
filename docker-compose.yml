@@ -133,7 +133,8 @@ services:
     ports:
       - "4000:4000"
     environment:
-      NODE_ENV: dev
+      <<: *service-env
+      PORT: 4000
     depends_on:
       - auth-service
       - user-service

@@ -139,7 +139,7 @@ export class ModuleRepository {
     try {
       const query = `
         SELECT * FROM modules
-        WHERE tags && $1::text[]`;
+        WHERE tags && $1::varchar[]`;
       const result = await this.pool.query(query, [tags]);
       return result.rows;
     } catch (error) {
