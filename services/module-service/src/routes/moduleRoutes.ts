@@ -35,5 +35,10 @@ router.post(
   "/site/:siteId",
   moduleController.assignModulesToSite.bind(moduleController)
 );
+router.delete(
+  "/site/:siteId/modules",
+  validateRole(["0"]),
+  moduleController.removeModulesFromSite.bind(moduleController)
+);
 
 export default router;

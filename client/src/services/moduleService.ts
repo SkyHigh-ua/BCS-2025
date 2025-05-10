@@ -82,6 +82,20 @@ export const getModulesBySiteId = async (siteId: string): Promise<Module[]> => {
   return response.data;
 };
 
+export const removeModulesFromSite = async (
+  siteId: string,
+  moduleIds: string[]
+): Promise<{ message: string }> => {
+  const response = await axios.delete(
+    `${API_BASE_URL}/site/${siteId}/modules`,
+    {
+      headers: getAuthHeaders(),
+      data: { moduleIds },
+    }
+  );
+  return response.data;
+};
+
 export const getWidgetComponent = async (
   moduleId: string
 ): Promise<{

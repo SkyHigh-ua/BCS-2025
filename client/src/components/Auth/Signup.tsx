@@ -47,10 +47,10 @@ const Signup: React.FC = () => {
           localStorage.setItem("jwt", signupResponse.login_token);
         }
 
-        const { url, name, pluginId } = formData.siteInfo;
+        const { domain, name, pluginId } = formData.siteInfo;
         const descrciption = `Site created by ${firstName} ${lastName}`;
         const siteResponse = await createSite({
-          domain: url,
+          domain,
           name,
           descrciption,
         });

@@ -16,7 +16,7 @@ const AddSiteForm: React.FC<{
   onNext: () => void;
   onBack: () => void;
   onUpdate: (data: {
-    url: string;
+    domain: string;
     name: string;
     monitoringType: string;
   }) => void;
@@ -47,7 +47,7 @@ const AddSiteForm: React.FC<{
   }, []);
 
   const handleNext = () => {
-    onUpdate({ url, name, monitoringType });
+    onUpdate({ domain: url, name, monitoringType });
     onNext();
   };
 

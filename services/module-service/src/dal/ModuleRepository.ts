@@ -135,6 +135,33 @@ export class ModuleRepository {
     }
   }
 
+  async removeModulesFromSite(
+    siteId: number,
+    moduleIds: number[]
+  ): Promise<void> {
+    try {
+      const placeholders = moduleIds
+        .map((_, index) => `$${index + 2}`)
+        .join(", ");
+      const query = `DELETE FROM site_modules 
+                     WHERE site_id = $1 
+                     AND module_id IN (${placeholders})`;
+
+      await this.pool.query(query, [siteId, ...moduleIds]);
+      logger.debug(
+        `Modules [${moduleIds.join(", ")}] removed from site ${siteId}`
+      );
+    } catch (error) {
+      logger.error(
+        `Error removing modules [${moduleIds.join(
+          ", "
+        )}] from site (${siteId}):`,
+        error
+      );
+      throw new Error("Database error");
+    }
+  }
+
   async getModulesByTags(tags: string[]): Promise<Module[]> {
     try {
       const query = `

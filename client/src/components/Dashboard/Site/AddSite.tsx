@@ -11,8 +11,11 @@ import {
   SelectValue,
 } from "@/ui/select";
 import { Check } from "lucide-react";
-import { fetchDefaultPlugins } from "@/services/pluginService";
-import { fetchDefaultModules } from "@/services/moduleService";
+import {
+  assignPluginToSite,
+  fetchDefaultPlugins,
+} from "@/services/pluginService";
+import { assignModules, fetchDefaultModules } from "@/services/moduleService";
 import { createSite } from "@/services/siteService";
 import { useNavigate } from "react-router-dom";
 
@@ -80,12 +83,18 @@ export default function AddSite(): JSX.Element {
     try {
       const { url, name, plugin, selectedModules } = formState;
       const formData = {
-        url,
+        domain: url,
         name,
         monitoringType: plugin,
         selectedModules,
       };
-      const newSite = await createSite(formData);
+      const newSite = await createSite({
+        domain: formData.domain,
+        name: formData.name,
+        description: formData.name,
+      });
+      await assignPluginToSite(formData.monitoringType, newSite.id);
+      await assignModules(newSite.id, formData.selectedModules);
       navigate(`/sites/${newSite.name}`);
     } catch (error) {
       console.error("Error creating site:", error);

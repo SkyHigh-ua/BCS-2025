@@ -9,7 +9,7 @@ router.post(
   scheduleController.scheduleModule.bind(scheduleController)
 );
 router.delete(
-  "/unschedule/:siteId/:moduleId",
+  "/schedule/:siteId/:moduleId",
   scheduleController.unscheduleModule.bind(scheduleController)
 );
 

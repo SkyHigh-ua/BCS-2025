@@ -161,6 +161,53 @@ export class ModuleController {
     }
   }
 
+  async removeModulesFromSite(req: Request, res: Response) {
+    const { siteId } = req.params;
+    const { moduleIds } = req.body;
+
+    if (!Array.isArray(moduleIds) || moduleIds.length === 0) {
+      return res
+        .status(400)
+        .json({ message: "moduleIds must be a non-empty array" });
+    }
+
+    try {
+      await this.moduleRepository.removeModulesFromSite(
+        Number(siteId),
+        moduleIds
+      );
+
+      try {
+        for (const moduleId of moduleIds) {
+          await axios.delete(`${process.env.SCHEDULER_SERVICE_URL}/schedule`, {
+            data: { siteId, moduleId },
+          });
+        }
+      } catch (schedulerError) {
+        logger.warn(`Could not remove scheduled tasks: ${schedulerError}`);
+      }
+
+      logger.info(
+        `[${req.method}] ${req.url} - 200: Modules [${moduleIds.join(
+          ", "
+        )}] removed from site ${siteId}`
+      );
+      res.status(200).json({
+        message: `Modules [${moduleIds.join(
+          ", "
+        )}] removed from site ${siteId}`,
+      });
+    } catch (error) {
+      logger.error(
+        `[${req.method}] ${req.url} - 500: Error removing modules from site`,
+        error
+      );
+      res
+        .status(500)
+        .json({ message: "Error removing modules from site", error });
+    }
+  }
+
   async getModulesByTags(req: Request, res: Response) {
     const { tags } = req.query;
     if (!tags) {
