@@ -13,7 +13,16 @@ if (!process.env.SCHEDULER_SERVICE_URL) {
   process.exit(1);
 }
 
-app.use(cors());
+app.use(
+  cors({
+    origin: [
+      process.env.GATEWAY_URL,
+      process.env.MODULE_CONTROLLER_SERVICE_URL,
+    ].filter((url): url is string => !!url),
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  })
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

@@ -11,7 +11,13 @@ if (!process.env.USER_SERVICE_URL) {
   process.exit(1);
 }
 
-app.use(cors());
+app.use(
+  cors({
+    origin: [process.env.GATEWAY_URL],
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  })
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

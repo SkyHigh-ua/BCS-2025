@@ -18,7 +18,16 @@ const cleanupService = initializeCleanupService();
 cleanupService.setCacheReferenceGetter(() => moduleController.getRepoCache());
 cleanupService.startCleanupScheduler();
 
-app.use(cors());
+app.use(
+  cors({
+    origin: [
+      process.env.MODULE_SERVICE_URL,
+      process.env.SCHEDULER_SERVICE_URL,
+    ].filter((url): url is string => !!url),
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  })
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

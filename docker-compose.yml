@@ -2,6 +2,7 @@ x-env: &service-env
   DATABASE_URL: postgresql://postgres:password@db:5432/postgres
   JWT_SECRET: key
   NODE_ENV: dev
+  GATEWAY_URL: http://gateway:4000
   AUTH_SERVICE_URL: http://auth-service:5001
   USER_SERVICE_URL: http://user-service:5002
   RBAC_SERVICE_URL: http://rbac-service:5003
@@ -153,7 +154,7 @@ services:
       - "3000:3000"
     environment:
       NODE_ENV: dev
-      API_BASE_URL: http://gateway:4000
+      API_BASE_URL: http://localhost:4000
     depends_on:
       - gateway
 

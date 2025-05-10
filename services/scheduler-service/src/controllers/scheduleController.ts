@@ -52,7 +52,7 @@ export class ScheduleController {
       try {
         logger.info(`Executing module ${moduleId} for site ${siteId}`);
         await axios.post(
-          `http://module-controller-service/api/modules/execute/${moduleId}`,
+          `${process.env.MODULE_CONTROLLER_SERVICE_URL}/execute/${moduleId}`,
           { siteId }
         );
       } catch (error) {
