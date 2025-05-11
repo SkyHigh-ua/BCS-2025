@@ -23,3 +23,18 @@ output "db_password" {
   value     = random_password.db_password.result
   sensitive = true
 }
+
+output "gateway_public_ip" {
+  value = aws_eip.gateway_ip.public_ip
+  description = "Public IP address for gateway and client services"
+}
+
+output "gateway_port" {
+  value = local.services.gateway.port
+  description = "Port for the gateway service"
+}
+
+output "client_port" {
+  value = local.services.client.port
+  description = "Port for the client service" 
+}

@@ -9,5 +9,6 @@ locals {
     module_controller_service = { name = "module-controller-service", port = 5011 },
     scheduler_service         = { name = "scheduler-service", port = 5012 },
     gateway                   = { name = "gateway", port = 3000 }
+    client                    = { name = "client", port = 4000 }
   }
 }
