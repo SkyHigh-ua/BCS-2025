@@ -138,8 +138,8 @@ resource "aws_ecs_task_definition" "services" {
   family                   = each.value.name
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
-  cpu                      = "256"
-  memory                   = "512"
+  cpu                      = each.value.cpu
+  memory                   = each.value.memory
 
   container_definitions = jsonencode([
     {
