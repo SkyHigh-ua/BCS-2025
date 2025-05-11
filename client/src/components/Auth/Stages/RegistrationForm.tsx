@@ -68,7 +68,7 @@ const RegistrationForm: React.FC<{
     setIsLoading(true);
     try {
       const emailExists = await verifyEmail(email);
-      if (emailExists) {
+      if (emailExists.status) {
         setErrors({ email: "This email is already registered" });
         setIsLoading(false);
         return;

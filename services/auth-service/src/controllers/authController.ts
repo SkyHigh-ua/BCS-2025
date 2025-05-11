@@ -118,7 +118,7 @@ export class AuthController {
   }
 
   async email(req: Request, res: Response) {
-    const { email } = req.params;
+    const { email } = req.body;
     try {
       const token = jwt.sign(
         { service: "auth-service" },
@@ -137,13 +137,13 @@ export class AuthController {
         logger.warn(
           `[${req.method}] ${req.url} - 404: User ${email} not found`
         );
-        return res.status(404).send();
+        return res.status(200).json({ status: false });
       }
 
       logger.info(
         `[${req.method}] ${req.url} - 200: User ${email} fetched successfully`
       );
-      res.status(200).send();
+      res.status(200).json({ status: true });
     } catch (error) {
       logger.error(
         `[${req.method}] ${req.url} - 500: Error fetching user by email`,
