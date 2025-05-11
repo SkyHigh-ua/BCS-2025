@@ -216,13 +216,13 @@ jobs:
           # npm test
 
       - name: Build client
+        env:
+          CI: false
         run: |
           cd ./client
           npm run build
 
       - name: Build and push Docker image
-        env:
-          CI: false
         run: |
           # Build from the repository root with correct context
           cd $GITHUB_WORKSPACE
@@ -233,7 +233,7 @@ jobs:
             docker build \
               -f build/Dockerfile.client \
               -t ${{ env.ECR_REPOSITORY }}:client-${{ github.sha }} \
-              --build-arg CI=${{ env.CI }} \
+              --build-arg CI=false \
               .
             
             docker push ${{ env.ECR_REPOSITORY }}:client-${{ github.sha }}
