@@ -182,7 +182,7 @@ resource "aws_ecs_service" "services" {
   cluster         = aws_ecs_cluster.uptime_monitoring.id
   task_definition = aws_ecs_task_definition.services[each.key].arn
   desired_count   = 1
-  launch_type     = "EC2"
+  launch_type     = "FARGATE"
 
   network_configuration {
     subnets          = each.key == "client" || each.key == "gateway" ? module.vpc.public_subnets : module.vpc.private_subnets
@@ -342,4 +342,14 @@ resource "aws_security_group_rule" "secretsmanager_egress" {
   prefix_list_ids   = []
   cidr_blocks       = ["0.0.0.0/0"]
   description       = "Allow HTTPS egress to Secrets Manager"
+}
+
+resource "aws_security_group_rule" "allow_vpc_ingress" {
+  security_group_id = module.vpc.default_security_group_id
+  type              = "ingress"
+  from_port         = 0
+  to_port           = 65535
+  protocol          = "tcp"
+  self              = true
+  description       = "Allow internal VPC traffic"
 }
