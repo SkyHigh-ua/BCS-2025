@@ -233,6 +233,7 @@ jobs:
             docker build \
               -f build/Dockerfile.client \
               -t ${{ env.ECR_REPOSITORY }}:client-${{ github.sha }} \
+              --build-arg CI=${{ env.CI }} \
               .
             
             docker push ${{ env.ECR_REPOSITORY }}:client-${{ github.sha }}
