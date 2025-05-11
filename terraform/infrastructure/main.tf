@@ -353,3 +353,33 @@ resource "aws_security_group_rule" "allow_vpc_ingress" {
   self              = true
   description       = "Allow internal VPC traffic"
 }
+
+resource "aws_security_group_rule" "allow_client_ingress" {
+  security_group_id = module.vpc.default_security_group_id
+  type              = "ingress"
+  from_port         = local.services.client.port
+  to_port           = local.services.client.port
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
+  description       = "Allow public access to client application"
+}
+
+resource "aws_security_group_rule" "allow_gateway_ingress" {
+  security_group_id = module.vpc.default_security_group_id
+  type              = "ingress"
+  from_port         = local.services.gateway.port
+  to_port           = local.services.gateway.port
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
+  description       = "Allow public access to API gateway"
+}
+
+resource "aws_security_group_rule" "allow_all_egress" {
+  security_group_id = module.vpc.default_security_group_id
+  type              = "egress"
+  from_port         = 0
+  to_port           = 0
+  protocol          = "-1"
+  cidr_blocks       = ["0.0.0.0/0"]
+  description       = "Allow all outbound traffic"
+}

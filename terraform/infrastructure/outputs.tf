@@ -38,3 +38,13 @@ output "client_port" {
   value       = local.services.client.port
   description = "Port for the client service"
 }
+
+output "client_access_url" {
+  value       = "http://${aws_eip.gateway_ip.public_ip}:${local.services.client.port}"
+  description = "URL to access the client application"
+}
+
+output "gateway_access_url" {
+  value       = "http://${aws_eip.gateway_ip.public_ip}:${local.services.gateway.port}"
+  description = "URL to access the API gateway"
+}
