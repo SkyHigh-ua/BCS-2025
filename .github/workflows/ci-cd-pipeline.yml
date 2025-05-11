@@ -11,7 +11,44 @@ env:
   ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
 
 jobs:
+  # Job to detect changes in each directory
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      infrastructure: ${{ steps.filter.outputs.infrastructure }}
+      database: ${{ steps.filter.outputs.database }}
+      services: ${{ steps.filter.outputs.services }}
+      gateway: ${{ steps.filter.outputs.gateway }}
+      client: ${{ steps.filter.outputs.client }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Check for file changes
+        id: filter
+        uses: dorny/paths-filter@v2
+        with:
+          filters: |
+            infrastructure:
+              - 'terraform/**'
+            database:
+              - 'database/**'
+            services:
+              - 'services/**'
+              - 'build/Dockerfile.service'
+            gateway:
+              - 'gateway/**'
+              - 'build/Dockerfile.gateway'
+            client:
+              - 'client/**'
+              - 'build/Dockerfile.client'
+
   infrastructure:
+    needs: changes
+    if: ${{ needs.changes.outputs.infrastructure == 'true' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -52,7 +89,8 @@ jobs:
           terraform apply -auto-approve tfplan
 
   db:
-    needs: infrastructure
+    needs: [changes, infrastructure]
+    if: ${{ needs.changes.outputs.database == 'true' || needs.infrastructure.result == 'success' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -72,7 +110,8 @@ jobs:
           # TODO: Add database seeding
 
   services:
-    needs: db
+    needs: [changes, db]
+    if: ${{ needs.changes.outputs.services == 'true' || needs.db.result == 'success' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -143,7 +182,8 @@ jobs:
           done
 
   gateway:
-    needs: services
+    needs: [changes, services]
+    if: ${{ needs.changes.outputs.gateway == 'true' || needs.services.result == 'success' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -182,7 +222,8 @@ jobs:
           fi
 
   client:
-    needs: gateway
+    needs: [changes, gateway]
+    if: ${{ needs.changes.outputs.client == 'true' || needs.gateway.result == 'success' }}
     runs-on: ubuntu-latest
 
     steps:
