@@ -182,7 +182,7 @@ resource "aws_ecs_service" "services" {
   cluster         = aws_ecs_cluster.uptime_monitoring.id
   task_definition = aws_ecs_task_definition.services[each.key].arn
   desired_count   = 1
-  launch_type     = "FARGATE"
+  launch_type     = "EC2"
 
   network_configuration {
     subnets          = each.key == "client" || each.key == "gateway" ? module.vpc.public_subnets : module.vpc.private_subnets
@@ -194,15 +194,15 @@ resource "aws_ecs_service" "services" {
     for_each = each.key != "client" ? [1] : []
     content {
       registry_arn = lookup({
-        "gateway": aws_service_discovery_service.gateway.arn,
-        "user_service": aws_service_discovery_service.user_service.arn,
-        "rbac_service": aws_service_discovery_service.rbac_service.arn,
-        "site_service": aws_service_discovery_service.site_service.arn,
-        "plugin_service": aws_service_discovery_service.plugin_service.arn,
-        "module_service": aws_service_discovery_service.module_service.arn,
-        "module_controller_service": aws_service_discovery_service.module_controller_service.arn,
-        "scheduler_service": aws_service_discovery_service.scheduler_service.arn,
-        "auth_service": aws_service_discovery_service.auth_service.arn,
+        "gateway" : aws_service_discovery_service.gateway.arn,
+        "user_service" : aws_service_discovery_service.user_service.arn,
+        "rbac_service" : aws_service_discovery_service.rbac_service.arn,
+        "site_service" : aws_service_discovery_service.site_service.arn,
+        "plugin_service" : aws_service_discovery_service.plugin_service.arn,
+        "module_service" : aws_service_discovery_service.module_service.arn,
+        "module_controller_service" : aws_service_discovery_service.module_controller_service.arn,
+        "scheduler_service" : aws_service_discovery_service.scheduler_service.arn,
+        "auth_service" : aws_service_discovery_service.auth_service.arn,
       }, each.key, null)
     }
   }
@@ -321,11 +321,11 @@ resource "aws_service_discovery_private_dns_namespace" "main" {
 }
 
 resource "aws_vpc_endpoint" "secretsmanager" {
-  vpc_id             = module.vpc.vpc_id
-  service_name       = "com.amazonaws.eu-central-1.secretsmanager"
-  vpc_endpoint_type  = "Interface"
-  subnet_ids         = module.vpc.private_subnets
-  security_group_ids = [module.vpc.default_security_group_id]
+  vpc_id              = module.vpc.vpc_id
+  service_name        = "com.amazonaws.eu-central-1.secretsmanager"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = module.vpc.private_subnets
+  security_group_ids  = [module.vpc.default_security_group_id]
   private_dns_enabled = true
 
   tags = {
