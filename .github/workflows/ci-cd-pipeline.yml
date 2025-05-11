@@ -1,0 +1,229 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: ["*"]
+  pull_request:
+    branches: ["*"]
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+
+jobs:
+  infrastructure:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.0.0
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Terraform Format and Validate
+        run: |
+          cd ./terraform/infrastructure
+          terraform fmt -diff -check -recursive
+          terraform init
+          terraform validate
+
+      - name: Terraform Plan
+        run: |
+          cd ./terraform/infrastructure
+          terraform plan -out=tfplan
+
+      - name: Terraform Apply (Optional)
+        if: github.event_name == 'push' && contains(github.event.head_commit.message, '[apply-terraform]')
+        run: |
+          cd ./terraform/infrastructure
+          terraform apply -auto-approve tfplan
+
+      - name: Skip Terraform Apply Note
+        if: ! contains(github.event.head_commit.message , '[apply-terraform]')
+        run: |
+          echo "::notice::Terraform apply step was skipped. Add [apply-terraform] to your commit message to apply changes."
+
+  db:
+    needs: infrastructure
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Run Database Migrations
+        run: |
+          cd ./database
+          echo "Running database migrations..."
+          # Add your database migration commands here
+
+      - name: Seed Database
+        run: |
+          cd ./database
+          echo "Seeding database..."
+          # Add your database seeding commands here
+
+  services:
+    needs: db
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Find all services
+        id: find-services
+        run: |
+          cd ./services
+          echo "service_list=$(find . -maxdepth 1 -type d -not -path '.' | sed 's|./||' | tr '\n' ' ')" >> $GITHUB_OUTPUT
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+
+      - name: Build and push all services
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          SERVICES: ${{ steps.find-services.outputs.service_list }}
+        run: |
+          cd ./services
+          for service in $SERVICES; do
+            echo "Processing service: $service"
+            
+            # Install dependencies and run tests
+            if [ -f "$service/package.json" ]; then
+              echo "Installing Node.js dependencies for $service"
+              cd $service
+              npm install
+              # npm test
+              cd ..
+            fi
+            
+            # Build and push Docker image if Dockerfile exists
+            if [ -f "$service/Dockerfile" ]; then
+              echo "Building and pushing Docker image for $service"
+              cd $service
+              docker build -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/$service:${{ github.sha }} .
+              docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/$service:${{ github.sha }}
+              docker tag ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/$service:${{ github.sha }} ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/$service:latest
+              docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/$service:latest
+              cd ..
+            else
+              echo "No Dockerfile found for $service, skipping Docker build"
+            fi
+          done
+
+  gateway:
+    needs: services
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+
+      - name: Install dependencies
+        run: |
+          cd ./gateway
+          npm install
+
+      - name: Run tests
+        run: |
+          cd ./gateway
+          npm test
+
+      - name: Build and push Docker image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          cd ./gateway
+          docker build -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/gateway:${{ github.sha }} .
+          docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/gateway:${{ github.sha }}
+          docker tag ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/gateway:${{ github.sha }} ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/gateway:latest
+          docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/gateway:latest
+
+  client:
+    needs: gateway
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+
+      - name: Install dependencies
+        run: |
+          cd ./client
+          npm install
+
+      - name: Run tests
+        run: |
+          cd ./client
+          npm test
+
+      - name: Build client
+        run: |
+          cd ./client
+          npm run build
+
+      - name: Build and push Docker image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          cd ./client
+          docker build -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/client:${{ github.sha }} .
+          docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/client:${{ github.sha }}
+          docker tag ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/client:${{ github.sha }} ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/client:latest
+          docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/client:latest
