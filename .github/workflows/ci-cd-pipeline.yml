@@ -39,9 +39,10 @@ jobs:
 
       - name: Terraform Init and Plan
         id: plan
+        if: github.ref == 'refs/heads/main' || github.event_name == 'pull_request'
         run: |
           cd ./terraform/infrastructure
-          terraform init -backend-config=../backend-config/backend.tfvars
+          terraform init -backend-config=../backend-config/backend-dev.hcl
           terraform plan -out=tfplan
 
       - name: Terraform Apply
