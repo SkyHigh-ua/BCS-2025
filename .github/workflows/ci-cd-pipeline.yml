@@ -107,7 +107,7 @@ jobs:
           SERVICES: ${{ steps.find-services.outputs.service_list }}
         run: |
           cd ./services
-            for service in $SERVICES; do
+          for service in $SERVICES; do
             echo "Processing service: $service"
             
             # Install dependencies and run tests
@@ -123,22 +123,18 @@ jobs:
             if [ -f "../build/Dockerfile.service" ]; then
               echo "Building and pushing Docker image for $service"
               
-              # Build directly from root directory with proper context
+              # Build from the repository root with correct context
               cd $GITHUB_WORKSPACE
-              
-              # Create ECR repository if it doesn't exist
-              aws ecr describe-repositories --repository-names ${{ env.ECR_REPOSITORY }}/$service || \
-                aws ecr create-repository --repository-name ${{ env.ECR_REPOSITORY }}/$service
               
               docker build \
                 -f build/Dockerfile.service \
                 --build-arg SERVICE_NAME=$service \
-                -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/$service:${{ github.sha }} \
+                -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:$service-${{ github.sha }} \
                 .
                 
-              docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/$service:${{ github.sha }}
-              docker tag ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/$service:${{ github.sha }} ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/$service:latest
-              docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/$service:latest
+              docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:$service-${{ github.sha }}
+              docker tag ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:$service-${{ github.sha }} ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:$service-latest
+              docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:$service-latest
               
               # Return to services directory
               cd $GITHUB_WORKSPACE/services
@@ -170,13 +166,20 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
-          cd ./build
-          if [ -f "Dockerfile.gateway" ]; then
+          # Build from the repository root with correct context
+          cd $GITHUB_WORKSPACE
+
+          if [ -f "build/Dockerfile.gateway" ]; then
             echo "Building and pushing Docker image for gateway"
-            docker build -f Dockerfile.gateway -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/gateway:${{ github.sha }} .
-            docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/gateway:${{ github.sha }}
-            docker tag ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/gateway:${{ github.sha }} ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/gateway:latest
-            docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/gateway:latest
+            
+            docker build \
+              -f build/Dockerfile.gateway \
+              -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:gateway-${{ github.sha }} \
+              .
+            
+            docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:gateway-${{ github.sha }}
+            docker tag ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:gateway-${{ github.sha }} ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:gateway-latest
+            docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:gateway-latest
           else
             echo "No Dockerfile found at build/Dockerfile.gateway, skipping Docker build"
           fi
@@ -224,13 +227,20 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
-          cd ./client
-          if [ -f "../build/Dockerfile.client" ]; then
+          # Build from the repository root with correct context
+          cd $GITHUB_WORKSPACE
+
+          if [ -f "build/Dockerfile.client" ]; then
             echo "Building and pushing Docker image for client"
-            docker build -f ../build/Dockerfile.client -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/client:${{ github.sha }} .
-            docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/client:${{ github.sha }}
-            docker tag ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/client:${{ github.sha }} ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/client:latest
-            docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/client:latest
+            
+            docker build \
+              -f build/Dockerfile.client \
+              -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:client-${{ github.sha }} \
+              .
+            
+            docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:client-${{ github.sha }}
+            docker tag ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:client-${{ github.sha }} ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:client-latest
+            docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:client-latest
           else
             echo "No Dockerfile found at build/Dockerfile.client, skipping Docker build"
           fi
