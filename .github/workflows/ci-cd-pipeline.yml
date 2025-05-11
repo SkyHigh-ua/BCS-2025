@@ -221,6 +221,8 @@ jobs:
           npm run build
 
       - name: Build and push Docker image
+        env:
+          CI: false
         run: |
           # Build from the repository root with correct context
           cd $GITHUB_WORKSPACE
