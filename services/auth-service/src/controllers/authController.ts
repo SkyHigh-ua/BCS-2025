@@ -116,4 +116,40 @@ export class AuthController {
       res.status(500).json({ message: "Error registering user", error });
     }
   }
+
+  async email(req: Request, res: Response) {
+    const { email } = req.params;
+    try {
+      const token = jwt.sign(
+        { service: "auth-service" },
+        process.env.JWT_SECRET!,
+        { expiresIn: "1h" }
+      );
+
+      const userResponse = await axios.get(
+        `${process.env.USER_SERVICE_URL}/email/${email}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (!userResponse || !userResponse.data) {
+        logger.warn(
+          `[${req.method}] ${req.url} - 404: User ${email} not found`
+        );
+        return res.status(404).send();
+      }
+
+      logger.info(
+        `[${req.method}] ${req.url} - 200: User ${email} fetched successfully`
+      );
+      res.status(200).send();
+    } catch (error) {
+      logger.error(
+        `[${req.method}] ${req.url} - 500: Error fetching user by email`,
+        error
+      );
+      res.status(500).json({ message: "Error fetching user by email", error });
+    }
+  }
 }

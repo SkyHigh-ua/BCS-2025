@@ -26,3 +26,8 @@ export const signup = async (
   });
   return response.data;
 };
+
+export const verifyEmail = async (email: string) => {
+  const response = await axios.post(`${API_BASE_URL}/email`, { email });
+  return response.data;
+};

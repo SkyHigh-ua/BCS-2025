@@ -28,6 +28,10 @@ const AddSiteForm: React.FC<{
     initialData.monitoringType || "none"
   );
   const [plugins, setPlugins] = useState<{ id: string; name: string }[]>([]);
+  const [errors, setErrors] = useState<{
+    url?: string;
+    name?: string;
+  }>({});
 
   useEffect(() => {
     const loadDefaultPlugins = async () => {
@@ -46,7 +50,37 @@ const AddSiteForm: React.FC<{
     loadDefaultPlugins();
   }, []);
 
+  const validateUrl = (value: string) => {
+    try {
+      const url = new URL(value);
+      return url.protocol === "http:" || url.protocol === "https:";
+    } catch {
+      return false;
+    }
+  };
+
   const handleNext = () => {
+    // Reset errors
+    setErrors({});
+    const newErrors: { url?: string; name?: string } = {};
+
+    // Validate URL
+    if (!url.trim()) {
+      newErrors.url = "Site URL is required";
+    } else if (!validateUrl(url)) {
+      newErrors.url = "Please enter a valid URL (e.g., https://example.com)";
+    }
+
+    // Validate site name
+    if (!name.trim()) {
+      newErrors.name = "Site name is required";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
     onUpdate({ domain: url, name, monitoringType });
     onNext();
   };
@@ -64,10 +98,15 @@ const AddSiteForm: React.FC<{
         <Input
           id="url"
           placeholder="https://example.com"
-          className="w-full text-slate-400 placeholder:text-slate-400 text-black"
+          className={`w-full text-slate-400 placeholder:text-slate-400 text-black ${
+            errors.url ? "border-red-500" : ""
+          }`}
           value={url}
           onChange={(e) => setUrl(e.target.value)}
         />
+        {errors.url && (
+          <p className="text-red-500 text-xs mt-1">{errors.url}</p>
+        )}
         <Label
           htmlFor="name"
           className="font-medium text-slate-900 text-sm leading-5"
@@ -77,10 +116,15 @@ const AddSiteForm: React.FC<{
         <Input
           id="name"
           placeholder="Acme Inc"
-          className="w-full text-slate-400 placeholder:text-slate-400 text-black"
+          className={`w-full text-slate-400 placeholder:text-slate-400 text-black ${
+            errors.name ? "border-red-500" : ""
+          }`}
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
+        {errors.name && (
+          <p className="text-red-500 text-xs mt-1">{errors.name}</p>
+        )}
         <Label
           htmlFor="monitoringType"
           className="font-medium text-slate-900 text-sm leading-5"
@@ -95,9 +139,7 @@ const AddSiteForm: React.FC<{
             <SelectValue placeholder="Select a plugin" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="none" selected="true">
-              Default
-            </SelectItem>
+            <SelectItem value="none">Default</SelectItem>
             {plugins.map((plugin) => (
               <SelectItem key={plugin.id} value={plugin.name}>
                 {plugin.name}

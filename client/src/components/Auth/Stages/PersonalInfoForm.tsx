@@ -17,8 +17,31 @@ const PersonalInfoForm: React.FC<{
   const [firstName, setFirstName] = useState(initialData.firstName);
   const [lastName, setLastName] = useState(initialData.lastName);
   const [companyName, setCompanyName] = useState(initialData.companyName);
+  const [errors, setErrors] = useState<{
+    firstName?: string;
+    lastName?: string;
+  }>({});
 
   const handleNext = () => {
+    // Reset errors
+    setErrors({});
+    const newErrors: { firstName?: string; lastName?: string } = {};
+
+    // Validate first name
+    if (!firstName.trim()) {
+      newErrors.firstName = "First name is required";
+    }
+
+    // Validate last name
+    if (!lastName.trim()) {
+      newErrors.lastName = "Last name is required";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
     onUpdate({ firstName, lastName, companyName });
     onNext();
   };
@@ -38,10 +61,15 @@ const PersonalInfoForm: React.FC<{
         <Input
           id="firstName"
           placeholder="John"
-          className="w-full text-slate-400 placeholder:text-slate-400 text-black"
+          className={`w-full text-slate-400 placeholder:text-slate-400 text-black ${
+            errors.firstName ? "border-red-500" : ""
+          }`}
           value={firstName}
           onChange={(e) => setFirstName(e.target.value)}
         />
+        {errors.firstName && (
+          <p className="text-red-500 text-xs mt-1">{errors.firstName}</p>
+        )}
         <Label
           htmlFor="lastName"
           className="font-medium text-slate-900 text-sm leading-5"
@@ -51,10 +79,15 @@ const PersonalInfoForm: React.FC<{
         <Input
           id="lastName"
           placeholder="Doe"
-          className="w-full text-slate-400 placeholder:text-slate-400 text-black"
+          className={`w-full text-slate-400 placeholder:text-slate-400 text-black ${
+            errors.lastName ? "border-red-500" : ""
+          }`}
           value={lastName}
           onChange={(e) => setLastName(e.target.value)}
         />
+        {errors.lastName && (
+          <p className="text-red-500 text-xs mt-1">{errors.lastName}</p>
+        )}
         <Label
           htmlFor="CompanyName"
           className="font-medium text-slate-900 text-sm leading-5"

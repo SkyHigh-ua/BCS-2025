@@ -19,7 +19,7 @@ const Signup: React.FC = () => {
   const [formData, setFormData] = useState({
     registration: { email: "", password: "", confirmPassword: "" },
     personalInfo: { firstName: "", lastName: "", companyName: "" },
-    siteInfo: { url: "", name: "", pluginId: "" },
+    siteInfo: { domain: "", name: "", pluginId: "" },
     modules: [],
   });
 
