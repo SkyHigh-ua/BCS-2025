@@ -6,9 +6,9 @@ terraform {
     }
   }
   backend "s3" {
-    key          = "dev/state.tfstate"
-    region       = "eu-central-1"
-    encrypt      = true
+    key     = "dev/state.tfstate"
+    region  = "eu-central-1"
+    encrypt = true
   }
 }
 
