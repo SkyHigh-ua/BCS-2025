@@ -76,9 +76,9 @@ resource "aws_secretsmanager_secret" "db_connection" {
 }
 
 resource "aws_secretsmanager_secret_version" "db_connection_version" {
-  secret_id     = aws_secretsmanager_secret.db_connection.id
-  secret_string = jsonencode({ 
-    DATABASE_URL = "postgresql://${var.db_username}:${random_password.db_password.result}@${aws_db_instance.postgres.address}:5432/${var.db_name}" 
+  secret_id = aws_secretsmanager_secret.db_connection.id
+  secret_string = jsonencode({
+    DATABASE_URL = "postgresql://${var.db_username}:${random_password.db_password.result}@${aws_db_instance.postgres.address}:5432/${var.db_name}"
   })
 }
 
@@ -132,7 +132,7 @@ resource "aws_ecs_task_definition" "services" {
       environment = each.key == "client" ? [
         { name = "NODE_ENV", value = var.env },
         { name = "API_BASE_URL", value = "http://${aws_eip.gateway_ip.public_ip}:${local.services.gateway.port}" }
-      ] : [
+        ] : [
         { name = "NODE_ENV", value = var.env },
         { name = "GATEWAY_URL", value = "http://${aws_service_discovery_service.gateway.name}.${aws_service_discovery_private_dns_namespace.main.name}" },
         { name = "USER_SERVICE_URL", value = "http://${aws_service_discovery_service.user_service.name}.${aws_service_discovery_private_dns_namespace.main.name}" },
@@ -156,7 +156,7 @@ resource "aws_ecs_service" "services" {
   task_definition = aws_ecs_task_definition.services[each.key].arn
   desired_count   = 1
   launch_type     = "FARGATE"
-  
+
   network_configuration {
     subnets          = module.vpc.public_subnets
     security_groups  = [module.vpc.default_security_group_id]
