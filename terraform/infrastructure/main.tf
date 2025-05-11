@@ -185,9 +185,26 @@ resource "aws_ecs_service" "services" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets          = module.vpc.public_subnets
+    subnets          = each.key == "client" || each.key == "gateway" ? module.vpc.public_subnets : module.vpc.private_subnets
     security_groups  = [module.vpc.default_security_group_id]
-    assign_public_ip = true
+    assign_public_ip = each.key == "client" || each.key == "gateway" ? true : false
+  }
+
+  dynamic "service_registries" {
+    for_each = each.key != "client" ? [1] : []
+    content {
+      registry_arn = lookup({
+        "gateway": aws_service_discovery_service.gateway.arn,
+        "user_service": aws_service_discovery_service.user_service.arn,
+        "rbac_service": aws_service_discovery_service.rbac_service.arn,
+        "site_service": aws_service_discovery_service.site_service.arn,
+        "plugin_service": aws_service_discovery_service.plugin_service.arn,
+        "module_service": aws_service_discovery_service.module_service.arn,
+        "module_controller_service": aws_service_discovery_service.module_controller_service.arn,
+        "scheduler_service": aws_service_discovery_service.scheduler_service.arn,
+        "auth_service": aws_service_discovery_service.auth_service.arn,
+      }, each.key, null)
+    }
   }
 }
 
@@ -301,4 +318,28 @@ resource "aws_service_discovery_private_dns_namespace" "main" {
   name        = "local"
   description = "Private DNS namespace for services"
   vpc         = module.vpc.vpc_id
+}
+
+resource "aws_vpc_endpoint" "secretsmanager" {
+  vpc_id             = module.vpc.vpc_id
+  service_name       = "com.amazonaws.eu-central-1.secretsmanager"
+  vpc_endpoint_type  = "Interface"
+  subnet_ids         = module.vpc.private_subnets
+  security_group_ids = [module.vpc.default_security_group_id]
+  private_dns_enabled = true
+
+  tags = {
+    Name = "${var.project_name}-secretsmanager-endpoint"
+  }
+}
+
+resource "aws_security_group_rule" "secretsmanager_egress" {
+  security_group_id = module.vpc.default_security_group_id
+  type              = "egress"
+  from_port         = 443
+  to_port           = 443
+  protocol          = "tcp"
+  prefix_list_ids   = []
+  cidr_blocks       = ["0.0.0.0/0"]
+  description       = "Allow HTTPS egress to Secrets Manager"
 }
