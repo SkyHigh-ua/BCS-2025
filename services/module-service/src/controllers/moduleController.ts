@@ -135,11 +135,21 @@ export class ModuleController {
       );
 
       for (const moduleId of moduleIds) {
-        await axios.post(`${process.env.SCHEDULER_SERVICE_URL}/schedule`, {
-          siteId,
-          moduleId,
-          cronExpression,
-        });
+        await axios.post(
+          `${process.env.SCHEDULER_SERVICE_URL}/schedule`,
+          {
+            siteId,
+            moduleId,
+            cronExpression,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${
+                req.headers.authorization?.split(" ")[1]
+              }`,
+            },
+          }
+        );
       }
 
       logger.info(
@@ -181,6 +191,11 @@ export class ModuleController {
         for (const moduleId of moduleIds) {
           await axios.delete(`${process.env.SCHEDULER_SERVICE_URL}/schedule`, {
             data: { siteId, moduleId },
+            headers: {
+              Authorization: `Bearer ${
+                req.headers.authorization?.split(" ")[1]
+              }`,
+            },
           });
         }
       } catch (schedulerError) {
@@ -237,7 +252,14 @@ export class ModuleController {
       let componentContent;
       try {
         const componentResponse = await axios.get(
-          `${this.moduleControllerUrl}/widget/${moduleId}`
+          `${this.moduleControllerUrl}/widget/${moduleId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${
+                req.headers.authorization?.split(" ")[1]
+              }`,
+            },
+          }
         );
         componentContent = componentResponse.data.component;
       } catch (error) {
@@ -250,7 +272,14 @@ export class ModuleController {
       let componentData;
       try {
         const componentResponse = await axios.get(
-          `${this.moduleControllerUrl}/data/${moduleId}`
+          `${this.moduleControllerUrl}/data/${moduleId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${
+                req.headers.authorization?.split(" ")[1]
+              }`,
+            },
+          }
         );
         componentData = componentResponse.data.component;
       } catch (error) {

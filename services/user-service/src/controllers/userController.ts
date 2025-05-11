@@ -92,18 +92,34 @@ export class UserController {
         parent_id
       );
 
-      await axios.post(`${process.env.RBAC_SERVICE_URL}/groups/assign`, {
-        userId: user.id,
-        groupId: company_id,
-      });
+      await axios.post(
+        `${process.env.RBAC_SERVICE_URL}/groups/assign`,
+        {
+          userId: user.id,
+          groupId: company_id,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${req.headers.authorization?.split(" ")[1]}`,
+          },
+        }
+      );
       logger.info(
         `[${req.method}] ${req.url} - Group assigned for user: ${email}`
       );
 
-      await axios.post(`${process.env.RBAC_SERVICE_URL}/roles/assign`, {
-        userId: user.id,
-        roleId: role_id,
-      });
+      await axios.post(
+        `${process.env.RBAC_SERVICE_URL}/roles/assign`,
+        {
+          userId: user.id,
+          roleId: role_id,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${req.headers.authorization?.split(" ")[1]}`,
+          },
+        }
+      );
       logger.info(
         `[${req.method}] ${req.url} - Role assigned for user: ${email}`
       );

@@ -126,24 +126,27 @@ export class AuthController {
         { expiresIn: "1h" }
       );
 
-      const userResponse = await axios.get(
-        `${process.env.USER_SERVICE_URL}/email/${email}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      if (!userResponse || !userResponse.data) {
-        logger.warn(
-          `[${req.method}] ${req.url} - 404: User ${email} not found`
+      try {
+        const userResponse = await axios.get(
+          `${process.env.USER_SERVICE_URL}/email/${email}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
         );
-        return res.status(200).json({ status: false });
-      }
 
-      logger.info(
-        `[${req.method}] ${req.url} - 200: User ${email} fetched successfully`
-      );
-      res.status(200).json({ status: true });
+        logger.info(
+          `[${req.method}] ${req.url} - 200: User ${email} fetched successfully`
+        );
+        res.status(200).json({ status: true });
+      } catch (axiosError: any) {
+        if (axiosError.response && axiosError.response.status === 404) {
+          logger.warn(
+            `[${req.method}] ${req.url} - 404: User ${email} not found`
+          );
+          return res.status(200).json({ status: false });
+        }
+        throw axiosError;
+      }
     } catch (error) {
       logger.error(
         `[${req.method}] ${req.url} - 500: Error fetching user by email`,
