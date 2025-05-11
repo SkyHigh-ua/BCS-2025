@@ -5,6 +5,13 @@ on:
     branches: ["*"]
   pull_request:
     branches: ["*"]
+  workflow_dispatch:
+    inputs:
+      skip_check:
+        description: "Skip changes detection"
+        type: boolean
+        default: false
+        required: false
 
 env:
   AWS_REGION: ${{ vars.AWS_REGION }}
@@ -14,13 +21,14 @@ jobs:
   # Job to detect changes in each directory
   changes:
     runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.skip_check != 'true' }}
     outputs:
       infrastructure: ${{ steps.filter.outputs.infrastructure }}
       database: ${{ steps.filter.outputs.database }}
       services: ${{ steps.filter.outputs.services }}
       gateway: ${{ steps.filter.outputs.gateway }}
       client: ${{ steps.filter.outputs.client }}
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -46,9 +54,21 @@ jobs:
               - 'client/**'
               - 'build/Dockerfile.client'
 
+  default-outputs:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.skip_check == 'true' }}
+    outputs:
+      infrastructure: "true"
+      database: "true"
+      services: "true"
+      gateway: "true"
+      client: "true"
+    steps:
+      - run: echo "Skipping changes detection, setting all outputs to true"
+
   infrastructure:
-    needs: changes
-    if: ${{ needs.changes.outputs.infrastructure == 'true' }}
+    needs: [changes, default-outputs]
+    if: ${{ (needs.changes.outputs.infrastructure == 'true' || github.event.inputs.skip_check == 'true') }}
     runs-on: ubuntu-latest
 
     steps:
@@ -89,8 +109,8 @@ jobs:
           terraform apply -auto-approve tfplan
 
   db:
-    needs: [changes, infrastructure]
-    if: ${{ needs.changes.outputs.database == 'true' || needs.infrastructure.result == 'success' }}
+    needs: [changes, default-outputs, infrastructure]
+    if: ${{ (needs.changes.outputs.database == 'true' || github.event.inputs.skip_check == 'true') && (needs.infrastructure.result == 'success' || needs.infrastructure.result == 'cancelled') }}
     runs-on: ubuntu-latest
 
     steps:
@@ -110,8 +130,8 @@ jobs:
           # TODO: Add database seeding
 
   services:
-    needs: [changes, db]
-    if: ${{ needs.changes.outputs.services == 'true' || needs.db.result == 'success' }}
+    needs: [changes, default-outputs, db]
+    if: ${{ (needs.changes.outputs.services == 'true' || github.event.inputs.skip_check == 'true') && (needs.db.result == 'success' || needs.db.result == 'cancelled') }}
     runs-on: ubuntu-latest
 
     steps:
@@ -133,7 +153,34 @@ jobs:
         id: find-services
         run: |
           cd ./services
-          echo "service_list=$(find . -maxdepth 1 -type d -not -path '.' | sed 's|./||' | tr '\n' ' ')" >> $GITHUB_OUTPUT
+          if [ "${{ github.event.inputs.skip_check }}" == "true" ]; then
+            # Process all services when skip_check is true
+            echo "service_list=$(find . -maxdepth 1 -type d -not -path '.' | sed 's|./||' | tr '\n' ' ')" >> $GITHUB_OUTPUT
+            echo "Processing all services (skip_check=true)"
+          else
+            # Get the list of modified files in the services directory
+            MODIFIED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} 2>/dev/null | grep '^services/' || echo "")
+            
+            if [ -z "$MODIFIED_FILES" ]; then
+              # For PR or first commit, get all changed files
+              echo "Using git diff against base branch for PR or initial commit"
+              BASE_SHA=$(git merge-base ${{ github.event.before || 'HEAD~1' }} ${{ github.sha }})
+              MODIFIED_FILES=$(git diff --name-only $BASE_SHA ${{ github.sha }} | grep '^services/' || echo "")
+            fi
+            
+            # Extract service names from modified files
+            if [ -n "$MODIFIED_FILES" ]; then
+              CHANGED_SERVICES=$(echo "$MODIFIED_FILES" | cut -d'/' -f2 | sort -u | tr '\n' ' ')
+              echo "Changes detected in services: $CHANGED_SERVICES"
+              echo "service_list=$CHANGED_SERVICES" >> $GITHUB_OUTPUT
+            else
+              echo "No changes detected in any service directory"
+              echo "service_list=" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+          # Print the list of services to process
+          echo "Services to process: ${{ steps.find-services.outputs.service_list || 'none' }}"
 
       - name: Set up Node.js
         uses: actions/setup-node@v2
@@ -182,8 +229,8 @@ jobs:
           done
 
   gateway:
-    needs: [changes, services]
-    if: ${{ needs.changes.outputs.gateway == 'true' || needs.services.result == 'success' }}
+    needs: [changes, default-outputs, services]
+    if: ${{ (needs.changes.outputs.gateway == 'true' || github.event.inputs.skip_check == 'true') && (needs.services.result == 'success' || needs.services.result == 'cancelled') }}
     runs-on: ubuntu-latest
 
     steps:
@@ -222,8 +269,8 @@ jobs:
           fi
 
   client:
-    needs: [changes, gateway]
-    if: ${{ needs.changes.outputs.client == 'true' || needs.gateway.result == 'success' }}
+    needs: [changes, default-outputs, gateway]
+    if: ${{ (needs.changes.outputs.client == 'true' || github.event.inputs.skip_check == 'true') && (needs.gateway.result == 'success' || needs.gateway.result == 'cancelled') }}
     runs-on: ubuntu-latest
 
     steps:
