@@ -122,14 +122,25 @@ jobs:
             # Build and push Docker image if Dockerfile exists
             if [ -f "../build/Dockerfile.service" ]; then
               echo "Building and pushing Docker image for $service"
-              docker build -f ../build/Dockerfile.service --build-arg SERVICE_NAME=$service -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/$service:${{ github.sha }} .
+              
+              # Build directly from root directory with proper context
+              cd $GITHUB_WORKSPACE
+              docker build \
+                -f build/Dockerfile.service \
+                --build-arg SERVICE_NAME=$service \
+                -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/$service:${{ github.sha }} \
+                --build-context service=services/$service \
+                .
+                
               docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/$service:${{ github.sha }}
               docker tag ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/$service:${{ github.sha }} ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/$service:latest
               docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/$service:latest
+              
+              # Return to services directory
+              cd $GITHUB_WORKSPACE/services
             else
               echo "No Dockerfile found for $service in build/, skipping Docker build"
             fi
-            done
           done
 
   gateway:
