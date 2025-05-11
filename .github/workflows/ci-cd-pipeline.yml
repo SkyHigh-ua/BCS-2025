@@ -34,24 +34,21 @@ jobs:
         run: |
           cd ./terraform/infrastructure
           terraform fmt -diff -check -recursive
-          terraform init
+          terraform init -backend=false
           terraform validate
 
-      - name: Terraform Plan
+      - name: Terraform Init and Plan
+        id: plan
         run: |
           cd ./terraform/infrastructure
+          terraform init -backend-config=../backend-config/backend.tfvars
           terraform plan -out=tfplan
 
-      - name: Terraform Apply (Optional)
-        if: github.event_name == 'push' && contains(github.event.head_commit.message, '[apply-terraform]')
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main' || github.event_name == 'pull_request'
         run: |
           cd ./terraform/infrastructure
           terraform apply -auto-approve tfplan
-
-      - name: Skip Terraform Apply Note
-        if: ! contains(github.event.head_commit.message , '[apply-terraform]')
-        run: |
-          echo "::notice::Terraform apply step was skipped. Add [apply-terraform] to your commit message to apply changes."
 
   db:
     needs: infrastructure
