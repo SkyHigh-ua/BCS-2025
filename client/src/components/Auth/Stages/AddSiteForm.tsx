@@ -20,9 +20,9 @@ const AddSiteForm: React.FC<{
     name: string;
     monitoringType: string;
   }) => void;
-  initialData: { url: string; name: string; monitoringType: string };
+  initialData: { domain: string; name: string; monitoringType: string };
 }> = ({ onNext, onBack, onUpdate, initialData }) => {
-  const [url, setUrl] = useState(initialData.url);
+  const [url, setUrl] = useState(initialData.domain);
   const [name, setName] = useState(initialData.name);
   const [monitoringType, setMonitoringType] = useState(
     initialData.monitoringType || "none"
@@ -52,6 +52,9 @@ const AddSiteForm: React.FC<{
 
   const validateUrl = (value: string) => {
     try {
+      if (!value.startsWith("http://") && !value.startsWith("https://")) {
+        value = "https://" + value;
+      }
       const url = new URL(value);
       return url.protocol === "http:" || url.protocol === "https:";
     } catch {

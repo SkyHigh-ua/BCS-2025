@@ -27,11 +27,11 @@ const ChooseModulesForm: React.FC<{
     loadDefaultModules();
   }, []);
 
-  const toggleModule = (moduleName: string) => {
+  const toggleModule = (moduleId: string) => {
     setSelectedModules((prev) =>
-      prev.includes(moduleName)
-        ? prev.filter((name) => name !== moduleName)
-        : [...prev, moduleName]
+      prev.includes(moduleId)
+        ? prev.filter((id) => id !== moduleId)
+        : [...prev, moduleId]
     );
   };
 
@@ -63,7 +63,7 @@ const ChooseModulesForm: React.FC<{
                 ? "bg-slate-900"
                 : "bg-slate-400"
             }`}
-            onClick={() => toggleModule(option.name)}
+            onClick={() => toggleModule(option.id)}
           >
             {selectedModules.includes(option.name) && (
               <Check className="w-[22px] h-[22px] text-white" />

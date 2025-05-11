@@ -110,7 +110,9 @@ const Signup: React.FC = () => {
               updateFormData("modules", data);
               if (siteId) {
                 try {
-                  await assignModules(siteId, data);
+                  if (data.length > 0) {
+                    await assignModules(siteId, data);
+                  }
                   const siteName = formData.siteInfo.name;
                   navigate(`/dashboard/${siteName}`);
                 } catch (error) {

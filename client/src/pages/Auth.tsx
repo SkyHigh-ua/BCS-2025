@@ -1,4 +1,6 @@
 import React from "react";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Login from "@/components/Auth/Login";
 import Signup from "@/components/Auth/Signup";
 import Index from "@/components/Auth/Index";
@@ -10,6 +12,26 @@ interface AuthPageProps {
 }
 
 const AuthPage: React.FC<AuthPageProps> = ({ mode }) => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const jwt = localStorage.getItem("jwt");
+    if (jwt) {
+      try {
+        const payload = JSON.parse(atob(jwt.split(".")[1]));
+        const isExpired = payload.exp * 1000 < Date.now();
+        if (isExpired) {
+          localStorage.removeItem("jwt");
+        } else {
+          navigate("/dashboard");
+        }
+      } catch (error) {
+        console.error("Invalid JWT:", error);
+        localStorage.removeItem("jwt");
+      }
+    }
+  }, [navigate]);
+
   let Content;
   switch (mode) {
     case "login":
