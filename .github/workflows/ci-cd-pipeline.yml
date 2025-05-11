@@ -120,9 +120,9 @@ jobs:
             fi
             
             # Build and push Docker image if Dockerfile exists
-            if [ -f "build/Dockerfile.service" ]; then
+            if [ -f "../build/Dockerfile.service" ]; then
               echo "Building and pushing Docker image for $service"
-              docker build -f build/Dockerfile.service --build-arg SERVICE_NAME=service -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/$service:${{ github.sha }} .
+              docker build -f ../build/Dockerfile.service --build-arg SERVICE_NAME=service -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/$service:${{ github.sha }} .
               docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/$service:${{ github.sha }}
               docker tag ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/$service:${{ github.sha }} ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/$service:latest
               docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/$service:latest
@@ -156,9 +156,9 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
           cd ./build
-          if [ -f "build/Dockerfile.gateway" ]; then
+          if [ -f "Dockerfile.gateway" ]; then
             echo "Building and pushing Docker image for gateway"
-            docker build -f build/Dockerfile.gateway -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/gateway:${{ github.sha }} .
+            docker build -f Dockerfile.gateway -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/gateway:${{ github.sha }} .
             docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/gateway:${{ github.sha }}
             docker tag ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/gateway:${{ github.sha }} ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/gateway:latest
             docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/gateway:latest
@@ -210,9 +210,9 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
           cd ./client
-          if [ -f "build/Dockerfile.client" ]; then
+          if [ -f "../build/Dockerfile.client" ]; then
             echo "Building and pushing Docker image for client"
-            docker build -f build/Dockerfile.client -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/client:${{ github.sha }} .
+            docker build -f ../build/Dockerfile.client -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/client:${{ github.sha }} .
             docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/client:${{ github.sha }}
             docker tag ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/client:${{ github.sha }} ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/client:latest
             docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/client:latest
