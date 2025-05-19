@@ -8,6 +8,7 @@ import { MODULE_BASE_DIR } from "../utils/constants";
 import axios from "axios";
 import { ModuleResultRepository } from "../dal/ModuleResultRepository";
 import { findModuleFile } from "../middleware/moduleMiddleware";
+import { getAuthHeader } from "../utils/authUtils";
 
 const execPromise = util.promisify(exec);
 
@@ -399,11 +400,23 @@ export class ModuleController {
     }
 
     try {
+      // Get auth header for service-to-service communication
+      const authHeader = getAuthHeader();
+      if (!authHeader) {
+        logger.error(`Failed to generate auth token for service requests`);
+        return inputs;
+      }
+
       // Fetch site information
       const siteResponse = await axios.get(
         `${
           process.env.SITE_SERVICE_URL || "http://site-service:5004"
-        }/${siteId}`
+        }/${siteId}`,
+        {
+          headers: {
+            Authorization: authHeader,
+          },
+        }
       );
       const siteInfo = siteResponse.data;
 
@@ -421,7 +434,12 @@ export class ModuleController {
         const pluginsResponse = await axios.get(
           `${
             process.env.PLUGIN_SERVICE_URL || "http://plugin-service:5005"
-          }/site/${siteId}`
+          }/site/${siteId}`,
+          {
+            headers: {
+              Authorization: authHeader,
+            },
+          }
         );
 
         if (pluginsResponse.data && Array.isArray(pluginsResponse.data)) {

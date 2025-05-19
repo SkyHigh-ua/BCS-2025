@@ -149,7 +149,7 @@ export default function AddSite(): JSX.Element {
               Default
             </SelectItem>
             {plugins.map((plugin) => (
-              <SelectItem key={plugin.id} value={plugin.name}>
+              <SelectItem key={plugin.id} value={plugin.id}>
                 {plugin.name}
               </SelectItem>
             ))}

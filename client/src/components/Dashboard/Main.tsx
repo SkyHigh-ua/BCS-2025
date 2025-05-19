@@ -85,13 +85,11 @@ function SiteRoutes({
   if (splat === "settings/plugins") {
     return <Plugins site={site} />;
   }
-  if (!splat || splat === "") {
+  if (!splat || splat === "" || splat === "/" || splat.match(/^.+$/)) {
     return <SitePage siteId={site.id} />;
   }
-  const widgetPattern = /^([^/]+)$/;
-  const widgetMatch = splat.match(widgetPattern);
-  if (widgetMatch) {
-    return <Widget id={widgetMatch[1]} />;
-  }
+  // if (splat === "widget") {
+  //   return <Widget id={widget.id} />;
+  // }
   return <NotFound className="!h-full" />;
 }

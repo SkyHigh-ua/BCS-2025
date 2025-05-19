@@ -10,8 +10,12 @@ export class ModuleController {
   constructor(moduleRepository: ModuleRepository = new ModuleRepository()) {
     this.moduleRepository = moduleRepository;
     this.moduleControllerUrl =
-      process.env.MODULE_CONTROLLER_URL ||
+      process.env.MODULE_CONTROLLER_SERVICE_URL ||
       "http://module-controller-service:5009";
+
+    logger.info(
+      `Module controller URL configured as: ${this.moduleControllerUrl}`
+    );
   }
 
   async getAllModules(req: Request, res: Response) {
@@ -247,7 +251,10 @@ export class ModuleController {
 
   async getWidgetComponent(req: Request, res: Response) {
     try {
-      const { moduleId } = req.params;
+      const moduleId = req.params.id;
+      logger.debug(
+        `Attempting to fetch widget component for module ${moduleId} from ${this.moduleControllerUrl}`
+      );
 
       let componentContent;
       try {
@@ -262,9 +269,14 @@ export class ModuleController {
           }
         );
         componentContent = componentResponse.data.component;
-      } catch (error) {
+        logger.debug(
+          `Successfully received widget component data from module controller`
+        );
+      } catch (error: any) {
         logger.error(
-          `Error fetching widget component from module controller: ${error}`
+          `Error fetching widget component from module controller: ${
+            error.message
+          }${error.response ? ` with status ${error.response.status}` : ""}`
         );
         componentContent = null;
       }
@@ -282,9 +294,14 @@ export class ModuleController {
           }
         );
         componentData = componentResponse.data.component;
-      } catch (error) {
+        logger.debug(
+          `Successfully received widget data from module controller`
+        );
+      } catch (error: any) {
         logger.error(
-          `Error fetching widget component from module controller: ${error}`
+          `Error fetching widget data from module controller: ${error.message}${
+            error.response ? ` with status ${error.response.status}` : ""
+          }`
         );
         componentData = null;
       }
@@ -294,7 +311,6 @@ export class ModuleController {
       );
 
       res.status(200).json({
-        module,
         component: componentContent,
         inputs: componentData,
       });

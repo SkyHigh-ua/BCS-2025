@@ -7,10 +7,15 @@ const app = express();
 const PORT = process.env.PORT || 5010;
 
 if (!process.env.SCHEDULER_SERVICE_URL) {
-  logger.error(
-    "SCHEDULER_SERVICE_URL is not defined in the environment variables."
+  logger.warn(
+    "SCHEDULER_SERVICE_URL is not defined in the environment variables. Will use default: http://scheduler-service:5007"
   );
-  process.exit(1);
+}
+
+if (!process.env.MODULE_CONTROLLER_SERVICE_URL) {
+  logger.warn(
+    "MODULE_CONTROLLER_SERVICE_URL is defined in the environment variables. Will use default: http://module-controller-service:5009"
+  );
 }
 
 app.use(

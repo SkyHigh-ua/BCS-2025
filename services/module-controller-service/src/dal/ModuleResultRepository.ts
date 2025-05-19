@@ -140,10 +140,11 @@ export class ModuleResultRepository {
   ): Promise<ModuleResult | null> {
     try {
       const query = `
-        SELECT id, site_id, module_id, timestamp, data
-        FROM module_results
-        WHERE module_id = $1
-        ORDER BY timestamp DESC
+        SELECT site_data.id, site_modules.site_id, site_modules.module_id, site_data.timestamp, site_data.data
+        FROM site_data
+        INNER JOIN site_modules ON site_data.module_id = site_modules.id
+        WHERE site_modules.module_id = $1
+        ORDER BY site_data.timestamp DESC
         LIMIT 1
       `;
 

@@ -2,6 +2,7 @@ import * as fs from "fs";
 import * as path from "path";
 import logger from "./logger";
 import { MODULE_BASE_DIR } from "./constants";
+import { getRepoCache } from "../middleware/moduleMiddleware";
 
 export class ModuleCleanupService {
   private cleanupInterval: NodeJS.Timeout | null = null;
@@ -47,10 +48,25 @@ export class ModuleCleanupService {
       const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
       const entries = fs.readdirSync(MODULE_BASE_DIR, { withFileTypes: true });
-      
-      // Get the current module cache if available
-      const moduleCache = this.moduleCacheRefGetter ? this.moduleCacheRefGetter() : null;
-      const cachedPaths = moduleCache ? Object.values(moduleCache).map(item => item.path) : [];
+
+      // Get the current module cache - if the getter is not set, try to use the exported
+      // getRepoCache function from moduleMiddleware
+      let moduleCache = null;
+      if (this.moduleCacheRefGetter) {
+        moduleCache = this.moduleCacheRefGetter();
+      } else {
+        try {
+          moduleCache = getRepoCache();
+        } catch (error) {
+          logger.warn(
+            "Could not access repo cache from middleware, proceeding without cache information"
+          );
+        }
+      }
+
+      const cachedPaths = moduleCache
+        ? Object.values(moduleCache).map((item) => item.path)
+        : [];
 
       let removedCount = 0;
 
@@ -58,10 +74,12 @@ export class ModuleCleanupService {
         if (!entry.isDirectory()) continue;
 
         const dirPath = path.join(MODULE_BASE_DIR, entry.name);
-        
+
         // Skip any directory that's in the active cache
         if (cachedPaths.includes(dirPath)) {
-          logger.debug(`Skipping cleanup of actively cached directory: ${dirPath}`);
+          logger.debug(
+            `Skipping cleanup of actively cached directory: ${dirPath}`
+          );
           continue;
         }
 

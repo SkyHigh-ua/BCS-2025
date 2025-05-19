@@ -144,7 +144,7 @@ const AddSiteForm: React.FC<{
           <SelectContent>
             <SelectItem value="none">Default</SelectItem>
             {plugins.map((plugin) => (
-              <SelectItem key={plugin.id} value={plugin.name}>
+              <SelectItem key={plugin.id} value={plugin.id}>
                 {plugin.name}
               </SelectItem>
             ))}

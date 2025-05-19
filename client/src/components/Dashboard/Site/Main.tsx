@@ -23,7 +23,7 @@ export function Main({ siteId }: { siteId: string }): JSX.Element {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {widgets.map((widget) => (
-        <Widget key={widget.id} id={widget.id} content={widget.content} />
+        <Widget id={widget.id} />
       ))}
     </div>
   );
