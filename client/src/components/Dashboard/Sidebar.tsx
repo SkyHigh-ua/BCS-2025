@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/ui/button";
 import {
   Collapsible,
@@ -28,14 +29,24 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/ui/dropdown-menu";
-import { Input } from "@/ui/input";
+import { Site } from "@/models/Site";
+import { fetchSitePlugin } from "@/services/pluginService";
 
-export function Sidebar({ sites }: { sites: string[] }): JSX.Element {
-  const [selectedSite, setSelectedSite] = useState("sitetest1.com");
+export function Sidebar({
+  sites,
+  selectedSite,
+  setSelectedSite,
+}: {
+  sites: Site[];
+  selectedSite: Site | null;
+  setSelectedSite: React.Dispatch<React.SetStateAction<Site | null>>;
+}): JSX.Element {
+  const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(244);
   const sidebarRef = useRef<HTMLDivElement | null>(null);
   const isResizing = useRef(false);
+  const [hasPlugins, setHasPlugins] = useState(false);
 
   const handleMouseMove = (e: MouseEvent) => {
     if (isResizing.current && sidebarRef.current) {
@@ -61,21 +72,55 @@ export function Sidebar({ sites }: { sites: string[] }): JSX.Element {
       document.removeEventListener("mouseup", handleMouseUp);
     };
   }, []);
-  // Navigation items data
-  const mainNavItems = [
-    { icon: <BookOpen className="w-4 h-4" />, label: "Performance" },
-    { icon: <BookOpen className="w-4 h-4" />, label: "Security" },
-    { icon: <BookOpen className="w-4 h-4" />, label: "Analytics" },
-    { icon: <BookOpen className="w-4 h-4" />, label: "SEO" },
-    { icon: <BookOpen className="w-4 h-4" />, label: "Web Analytics" },
-    { icon: <BookOpen className="w-4 h-4" />, label: "Reports" },
-  ];
+  // TODO: Add a function to fetch pages
+  const mainNavItems = [];
 
   const [searchQuery, setSearchQuery] = useState("");
 
   const filteredSites = sites.filter((site) =>
-    site.toLowerCase().includes(searchQuery.toLowerCase())
+    site.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  useEffect(() => {
+    if (sites.length > 0) {
+      const currentPath = window.location.pathname;
+      const pathParts = currentPath.split("/").filter(Boolean);
+
+      if (
+        pathParts[0] === "dashboard" &&
+        pathParts[1] &&
+        !["add-site", "settings"].includes(pathParts[1])
+      ) {
+        const siteName = pathParts[1];
+        const matchingSite = sites.find((site) => site.name === siteName);
+
+        if (
+          matchingSite &&
+          (!selectedSite || selectedSite.name !== matchingSite.name)
+        ) {
+          setSelectedSite(matchingSite);
+        }
+      }
+    }
+  }, [sites, selectedSite, setSelectedSite]);
+
+  useEffect(() => {
+    if (selectedSite) {
+      const checkPlugins = async () => {
+        try {
+          const plugins = await fetchSitePlugin(selectedSite.id);
+          setHasPlugins(plugins && plugins.length > 0);
+        } catch (error) {
+          console.error("Failed to fetch plugins:", error);
+          setHasPlugins(false);
+        }
+      };
+
+      checkPlugins();
+    } else {
+      setHasPlugins(false);
+    }
+  }, [selectedSite]);
 
   return (
     <div
@@ -93,7 +138,7 @@ export function Sidebar({ sites }: { sites: string[] }): JSX.Element {
             >
               <div className="flex flex-col items-start gap-1 flex-1 w-full text-left">
                 <div className="text-sm font-medium text-ellipsis whitespace-nowrap overflow-hidden">
-                  {selectedSite}
+                  {selectedSite ? selectedSite.name : "Select a site"}
                 </div>
               </div>
               {isDropdownOpen ? (
@@ -121,16 +166,18 @@ export function Sidebar({ sites }: { sites: string[] }): JSX.Element {
               <DropdownMenuItem
                 key={index}
                 className="w-full"
-                onClick={() => setSelectedSite(site)}
+                onClick={() => {
+                  setSelectedSite(site);
+                  navigate(`/dashboard/${site.name}`);
+                }}
               >
-                {site}
+                {site.name}
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
         <Separator className="w-full" />
       </div>
-
       {/* Navigation menu */}
       <ScrollArea className="w-full">
         <NavigationMenu
@@ -144,9 +191,14 @@ export function Sidebar({ sites }: { sites: string[] }): JSX.Element {
                 variant="ghost"
                 className="flex flex-row h-8 items-center gap-2 px-4 py-2 justify-start rounded-md w-full"
                 asChild
+                disabled={!selectedSite}
               >
                 <NavigationMenuLink
-                  href={`/dashboard/${selectedSite}`}
+                  href={
+                    selectedSite
+                      ? `/dashboard/${selectedSite.name}`
+                      : "/dashboard/"
+                  }
                   className="flex items-center gap-2 w-full"
                 >
                   <LayoutDashboard className="w-4 h-4" />
@@ -164,7 +216,10 @@ export function Sidebar({ sites }: { sites: string[] }): JSX.Element {
                   className="flex flex-row h-8 items-center gap-2 px-4 py-2 justify-start rounded-md w-full"
                   asChild
                 >
-                  <NavigationMenuLink className="flex items-center gap-2 w-full">
+                  <NavigationMenuLink
+                    className="flex items-center gap-2 w-full"
+                    href={item.href}
+                  >
                     {item.icon}
                     <span className="text-sm font-normal text-ellipsis whitespace-nowrap overflow-hidden w-full">
                       {item.label}
@@ -196,33 +251,50 @@ export function Sidebar({ sites }: { sites: string[] }): JSX.Element {
                     variant="ghost"
                     className="flex h-7 items-center gap-2 px-4 py-2 justify-start rounded-md w-full"
                     asChild
+                    disabled={!selectedSite}
                   >
                     <NavigationMenuLink
-                      href={`/dashboard/${selectedSite}/settings/widgets`}
+                      href={
+                        selectedSite
+                          ? `/dashboard/${selectedSite.name}/settings/widgets`
+                          : "/dashboard/"
+                      }
                       className="flex items-start w-full text-sm font-normal flex-1 text-left overflow-hidden text-ellipsis whitespace-nowrap"
                     >
                       Widgets
                     </NavigationMenuLink>
                   </Button>
-                  <Button
-                    variant="ghost"
-                    className="flex h-7 items-center gap-2 px-4 py-2 justify-start rounded-md w-full"
-                    asChild
-                  >
-                    <NavigationMenuLink
-                      href={`/dashboard/${selectedSite}/settings/plugins`}
-                      className="flex items-start w-full text-sm font-normal flex-1 text-left overflow-hidden text-ellipsis whitespace-nowrap"
+                  {hasPlugins && (
+                    <Button
+                      variant="ghost"
+                      className="flex h-7 items-center gap-2 px-4 py-2 justify-start rounded-md w-full"
+                      asChild
+                      disabled={!selectedSite}
                     >
-                      Plugins
-                    </NavigationMenuLink>
-                  </Button>
+                      <NavigationMenuLink
+                        href={
+                          selectedSite
+                            ? `/dashboard/${selectedSite.name}/settings/plugins`
+                            : "/dashboard/"
+                        }
+                        className="flex items-start w-full text-sm font-normal flex-1 text-left overflow-hidden text-ellipsis whitespace-nowrap"
+                      >
+                        Plugins
+                      </NavigationMenuLink>
+                    </Button>
+                  )}
                   <Button
                     variant="ghost"
                     className="flex h-7 items-center gap-2 px-4 py-2 justify-start rounded-md w-full"
                     asChild
+                    disabled={!selectedSite}
                   >
                     <NavigationMenuLink
-                      href={`/dashboard/${selectedSite}/settings/`}
+                      href={
+                        selectedSite
+                          ? `/dashboard/${selectedSite.name}/settings/`
+                          : "/dashboard/"
+                      }
                       className="flex items-start w-full text-sm font-normal flex-1 text-left overflow-hidden text-ellipsis whitespace-nowrap"
                     >
                       Settings

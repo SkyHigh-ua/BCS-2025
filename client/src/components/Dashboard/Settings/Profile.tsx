@@ -39,10 +39,10 @@ export default function Profile({
         const userData = await getUserData();
         setUser(userData);
         setFormData({
-          firstName: userData.firstName,
-          lastName: userData.lastName,
+          first_name: userData.first_name,
+          last_name: userData.last_name,
           email: userData.email,
-          avatar: userData.avatar,
+          pfp: userData.pfp,
           password: "",
           confirmPassword: "",
         });
@@ -66,11 +66,12 @@ export default function Profile({
     }
 
     try {
-      const updatedUser = await updateUser(user.email, {
-        name: `${formData.firstName} ${formData.lastName}`,
-        email: formData.email,
-        avatar: formData.avatar,
-      });
+      const filteredFormData = Object.fromEntries(
+        Object.entries(formData).filter(
+          ([_, value]) => value !== "" && value !== undefined
+        )
+      );
+      const updatedUser = await updateUser(user.id, filteredFormData);
       setUser(updatedUser);
     } catch (error) {
       console.error("Failed to update profile:", error);
@@ -93,20 +94,20 @@ export default function Profile({
 
       <CardContent className="space-y-4">
         <div className="flex flex-col gap-2">
-          <Label htmlFor="firstName">First Name</Label>
+          <Label htmlFor="first_name">First Name</Label>
           <Input
-            id="firstName"
+            id="first_name"
             placeholder="Enter your first name"
-            value={formData.firstName}
+            value={formData.first_name}
             onChange={handleInputChange}
           />
         </div>
         <div className="flex flex-col gap-2">
-          <Label htmlFor="lastName">Last Name</Label>
+          <Label htmlFor="last_name">Last Name</Label>
           <Input
-            id="lastName"
+            id="last_name"
             placeholder="Enter your last name"
-            value={formData.lastName}
+            value={formData.last_name}
             onChange={handleInputChange}
           />
         </div>
@@ -141,12 +142,12 @@ export default function Profile({
           />
         </div>
         <div className="flex flex-col gap-2">
-          <Label htmlFor="avatar">Profile Picture (optional)</Label>
+          <Label htmlFor="pfp">Profile Picture (optional)</Label>
           <Input
-            id="avatar"
+            id="pfp"
             type="url"
             placeholder="Enter a URL for your profile picture"
-            value={formData.avatar}
+            value={formData.pfp}
             onChange={handleInputChange}
           />
         </div>

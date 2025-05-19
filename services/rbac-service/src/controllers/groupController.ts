@@ -138,10 +138,10 @@ export class GroupController {
 
   async getGroupUsers(req: Request, res: Response) {
     logger.debug("Fetching users in group");
-    const { groupId } = req.params;
+    const { id } = req.params;
     try {
-      const users = await this.userRepository.getGroupUsers(Number(groupId));
-      logger.debug(`Fetched users in group ${groupId} successfully`);
+      const users = await this.userRepository.getGroupUsers(Number(id));
+      logger.debug(`Fetched users in group ${id} successfully`);
       res.status(200).json(users);
     } catch (error) {
       logger.error("Error fetching users in group:", error);

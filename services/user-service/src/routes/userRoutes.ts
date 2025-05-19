@@ -11,6 +11,11 @@ router.get(
   validateJWT,
   userController.getCurrentUser.bind(userController)
 );
+router.get(
+  "/sub-users",
+  validateJWT,
+  userController.getSubUsers.bind(userController)
+);
 
 router.get("/", validateJWT, userController.getAllUsers.bind(userController));
 router.get(

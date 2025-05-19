@@ -95,7 +95,7 @@ export default function AddSite(): JSX.Element {
       });
       await assignPluginToSite(formData.monitoringType, newSite.id);
       await assignModules(newSite.id, formData.selectedModules);
-      navigate(`/sites/${newSite.name}`);
+      navigate(`/dashboard/${newSite.name}`);
     } catch (error) {
       console.error("Error creating site:", error);
     }

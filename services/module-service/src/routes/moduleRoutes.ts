@@ -56,7 +56,7 @@ router.post(
 router.delete(
   "/site/:siteId/modules",
   validateJWT,
-  validateRole(["0"]),
+  validateRole(["0", "1"]),
   moduleController.removeModulesFromSite.bind(moduleController)
 );
 

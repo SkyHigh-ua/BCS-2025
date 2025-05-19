@@ -86,13 +86,12 @@ export const removeModulesFromSite = async (
   siteId: string,
   moduleIds: string[]
 ): Promise<{ message: string }> => {
-  const response = await axios.delete(
-    `${API_BASE_URL}/site/${siteId}/modules`,
-    {
-      headers: getAuthHeaders(),
-      data: { moduleIds },
-    }
-  );
+  const response = await axios({
+    method: "DELETE",
+    url: `${API_BASE_URL}/site/${siteId}/modules`,
+    headers: getAuthHeaders(),
+    data: { moduleIds },
+  });
   return response.data;
 };
 
@@ -107,4 +106,16 @@ export const getWidgetComponent = async (
     headers: getAuthHeaders(),
   });
   return response.data;
+};
+
+export const toggleModuleForSite = async (
+  siteId: string,
+  moduleId: string,
+  enable: boolean
+): Promise<{ success: boolean }> => {
+  if (enable) {
+    return assignModules(siteId, [moduleId]);
+  } else {
+    return removeModulesFromSite(siteId, [moduleId]);
+  }
 };

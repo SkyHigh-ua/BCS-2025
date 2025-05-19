@@ -76,9 +76,9 @@ export const Navbar = ({ user }: { user: User | null }): JSX.Element => {
                 className="flex items-center gap-3 cursor-pointer"
               >
                 <Avatar className="h-9 w-9">
-                  {user?.avatar ? (
+                  {user?.pfp ? (
                     <img
-                      src={user.avatar}
+                      src={user.pfp}
                       alt="User Avatar"
                       className="h-full w-full rounded-full"
                     />
@@ -91,7 +91,9 @@ export const Navbar = ({ user }: { user: User | null }): JSX.Element => {
 
                 <div className="flex items-center gap-1">
                   <span className="text-sm font-medium">
-                    {user ? `${user.firstName} ${user.lastName}` : "Loading..."}
+                    {user && user.first_name && user.last_name
+                      ? `${user.first_name} ${user.last_name}`
+                      : "Loading..."}
                   </span>
                   <ChevronDownIcon className="h-4 w-4 text-foreground" />
                 </div>

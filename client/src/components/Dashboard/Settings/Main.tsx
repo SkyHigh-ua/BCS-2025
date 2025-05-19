@@ -56,7 +56,7 @@ export default function SettingsMain({
             />
             <Route
               path="/teams"
-              element={<Teams userId={user.id} sites={sites} />}
+              element={<Teams user={user} sites={sites} />}
             />
           </Routes>
         </div>

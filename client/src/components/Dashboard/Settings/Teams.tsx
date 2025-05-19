@@ -36,25 +36,31 @@ import {
   Trash2Icon,
   UserIcon,
 } from "lucide-react";
+import { fetchUsers } from "@/services/userService";
 import {
   getUserOwnedGroups,
   getGroupUsers,
   getSitesForGroup,
+  createGroup,
+  updateGroup,
+  deleteGroup,
+  assignGroupToUser,
   assignGroupToSite,
   removeSiteFromGroup,
 } from "@/services/rbacService";
 import { Site } from "@/models/Site";
 import { Group } from "@/models/Group";
-import { Role } from "@/models/Role";
+import { User } from "@/models/User";
 
 export default function Teams({
-  userId,
+  user,
   sites,
 }: {
-  userId: string;
+  user: User;
   sites: Site[];
 }): JSX.Element {
   const [teams, setTeams] = useState([]);
+  const [users, setUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTeam, setSelectedTeam] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
@@ -65,7 +71,7 @@ export default function Teams({
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const userTeams = await getUserOwnedGroups(userId);
+        const userTeams = await getUserOwnedGroups(user.id);
 
         const teamsWithDetails = await Promise.all(
           userTeams.map(async (team: Group) => {
@@ -77,13 +83,16 @@ export default function Teams({
         );
 
         setTeams(teamsWithDetails);
+        const allUsers = await fetchUsers();
+
+        setUsers(allUsers);
       } catch (error) {
         console.error("Failed to fetch data:", error);
       }
     };
 
     fetchData();
-  }, [userId]);
+  }, [user.id]);
 
   const filteredSites = sites.filter((site: Site) =>
     site.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -156,7 +165,20 @@ export default function Teams({
               Each team can have its own members and site access.
             </CardDescription>
           </div>
-          <Button>Add new team</Button>
+          <Button
+            onClick={async () => {
+              const newTeam = await createGroup({
+                name: "New Team",
+              });
+              setTeams((prev) => [
+                ...prev,
+                { ...newTeam, members: [], sites: [] },
+              ]);
+              setSelectedTeam(newTeam);
+            }}
+          >
+            Add new team
+          </Button>
         </CardHeader>
         <CardContent className="pb-6">
           <div className="flex flex-col gap-4">
@@ -172,71 +194,86 @@ export default function Teams({
                   <div className="w-9 h-9 bg-slate-300 rounded-full flex items-center justify-center">
                     <div className="w-4 h-4" />
                   </div>
-                  <div className="font-medium text-foreground">{team.name}</div>
+                  <Input
+                    className={
+                      "font-medium text-foreground pr-1 border-none shadow-none"
+                    }
+                    value={team.name}
+                    onChange={(e) =>
+                      setTeams((prev) =>
+                        prev.map((t) =>
+                          t.id === team.id ? { ...t, name: e.target.value } : t
+                        )
+                      )
+                    }
+                    onBlur={() => {
+                      updateGroup(team.id, { name: team.name });
+                    }}
+                  />
                 </div>
-
-                {index === 0 ? (
-                  <div className="w-[179px] opacity-50">
-                    <div className="flex items-center gap-3 px-3 py-2 bg-background rounded-md border-border">
-                      <div className="flex-1 text-sm text-foreground">
-                        All Sites
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="w-[177px] h-[38px] gap-2"
-                        >
-                          <CircleIcon className="w-4 h-4" />
-                          <span>Set Access Sites</span>
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[254px] p-0" align="end">
-                        <div className="flex items-center gap-2 p-2 border-b">
-                          <SearchIcon className="w-4 h-4" />
-                          <input
-                            type="text"
-                            placeholder="Find site"
-                            className="text-sm text-muted-foreground flex-1 bg-transparent outline-none"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                          />
-                        </div>
-                        <div className="p-2">
-                          {filteredSites.map((site: Site, siteIndex) => (
-                            <div
-                              key={siteIndex}
-                              className="flex items-center gap-2 p-2 rounded-md hover:bg-accent"
-                            >
-                              <Checkbox
-                                id={`site-${siteIndex}`}
-                                checked={team.sites.some(
-                                  (teamSite) => teamSite.id === site.id
-                                )}
-                                onCheckedChange={() =>
-                                  toggleCheckbox(team.id, site.id)
-                                }
-                              />
-                              <label
-                                htmlFor={`site-${siteIndex}`}
-                                className="text-sm flex-1 cursor-pointer"
-                              >
-                                {site.name}
-                              </label>
-                            </div>
-                          ))}
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-                    <Button variant="ghost" size="icon" className="w-12 h-9">
-                      <Trash2Icon className="w-4 h-4" />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-[177px] h-[38px] gap-2"
+                    >
+                      <CircleIcon className="w-4 h-4" />
+                      <span>Set Access Sites</span>
                     </Button>
-                  </>
-                )}
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[254px] p-0" align="end">
+                    <div className="flex items-center gap-2 p-2 border-b">
+                      <SearchIcon className="w-4 h-4" />
+                      <input
+                        type="text"
+                        placeholder="Find site"
+                        className="text-sm text-muted-foreground flex-1 bg-transparent outline-none"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                      />
+                    </div>
+                    <div className="p-2">
+                      {filteredSites.map((site: Site, siteIndex) => (
+                        <div
+                          key={siteIndex}
+                          className="flex items-center gap-2 p-2 rounded-md hover:bg-accent"
+                        >
+                          <Checkbox
+                            id={`site-${siteIndex}`}
+                            checked={team.sites.some(
+                              (teamSite) => teamSite.id === site.id
+                            )}
+                            onCheckedChange={() =>
+                              toggleCheckbox(team.id, site.id)
+                            }
+                          />
+                          <label
+                            htmlFor={`site-${siteIndex}`}
+                            className="text-sm flex-1 cursor-pointer"
+                          >
+                            {site.name}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="w-12 h-9"
+                  onClick={() => {
+                    const confirmDelete = window.confirm(
+                      `Are you sure you want to delete the team "${team.name}"?`
+                    );
+                    if (confirmDelete) {
+                      setTeams((prev) => prev.filter((t) => t.id !== team.id));
+                      deleteGroup(team.id);
+                    }
+                  }}
+                >
+                  <Trash2Icon className="w-4 h-4" />
+                </Button>
               </div>
             ))}
           </div>
@@ -246,15 +283,92 @@ export default function Teams({
       {/* Members card */}
       {selectedTeam && (
         <Card className="w-full">
-          <CardHeader>
-            <CardTitle>Members</CardTitle>
-            <CardDescription>
-              Members are users with access to the selected team. Assign roles
-              to control their level of access and permissions.
-            </CardDescription>
+          <CardHeader className="flex flex-row items-start justify-between">
+            <div className="flex flex-col gap-1.5">
+              <CardTitle>Members</CardTitle>
+              <CardDescription>
+                Members are users with access to the selected team. Assign roles
+                to control their level of access and permissions.
+              </CardDescription>
+            </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button>Add new team member</Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[254px] p-0" align="end">
+                <div className="flex items-center gap-2 p-2 border-b">
+                  <SearchIcon className="w-4 h-4" />
+                  <input
+                    type="text"
+                    placeholder="Find user"
+                    className="text-sm text-muted-foreground flex-1 bg-transparent outline-none"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+                <div className="p-2">
+                  {users.length == 0 ? (
+                    <div className="flex items-center gap-2 p-2 rounded-md">
+                      <span className="text-sm text-muted-foreground">
+                        No users found
+                      </span>
+                    </div>
+                  ) : (
+                    users
+                      .filter((member: User) =>
+                        member.name
+                          .toLowerCase()
+                          .includes(searchQuery.toLowerCase())
+                      )
+                      .map((member: User, memberIndex) => (
+                        <div
+                          key={memberIndex}
+                          className="flex items-center gap-2 p-2 rounded-md hover:bg-accent cursor-pointer"
+                          onClick={async () => {
+                            await assignGroupToUser(member.id, selectedTeam.id);
+                            setSelectedTeam((prev) => ({
+                              ...prev,
+                              members: [...prev.members, member],
+                            }));
+                          }}
+                        >
+                          <div className="w-4 h-4 bg-primary rounded-full flex items-center justify-center">
+                            <span className="text-white text-xs font-bold">
+                              {member.name.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                          <label
+                            htmlFor={`member-${memberIndex}`}
+                            className="text-sm flex-1 cursor-pointer"
+                          >
+                            {member.name}
+                          </label>
+                        </div>
+                      ))
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
           </CardHeader>
           <CardContent className="pb-6">
             <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 flex-1">
+                  <div className="w-9 h-9 bg-secondary rounded-full flex items-center justify-center">
+                    <UserIcon className="w-4 h-4" />
+                  </div>
+                  <div className="flex flex-col">
+                    <div className="font-medium text-foreground">
+                      {user.name}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {user.email}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="text-sm text-muted-foreground">Owner</div>
+              </div>
               {selectedTeam.members.map((member, index) => (
                 <div key={index} className="flex items-center justify-between">
                   <div className="flex items-center gap-3 flex-1">
@@ -271,45 +385,29 @@ export default function Teams({
                     </div>
                   </div>
 
-                  {!member.isEditable ? (
-                    <div className="w-[131px] opacity-50">
-                      <div className="flex items-center gap-3 px-3 py-2 bg-background rounded-md border-border">
-                        <div className="flex-1 text-sm text-foreground">
-                          {member.role}
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <Select defaultValue={member.role}>
-                        <SelectTrigger className="w-[139px]">
-                          <SelectValue placeholder="Select role" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Owner">Owner</SelectItem>
-                          <SelectItem value="Manager">Manager</SelectItem>
-                          <SelectItem value="Viewer">Viewer</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="w-12 h-9"
-                          >
-                            <MoreHorizontalIcon className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>Edit</DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-500">
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </>
-                  )}
+                  <Select defaultValue={member.role}>
+                    <SelectTrigger className="w-[139px]">
+                      <SelectValue placeholder="Select role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Owner">Owner</SelectItem>
+                      <SelectItem value="Manager">Manager</SelectItem>
+                      <SelectItem value="Viewer">Viewer</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="w-12 h-9">
+                        <MoreHorizontalIcon className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem>Edit</DropdownMenuItem>
+                      <DropdownMenuItem className="text-red-500">
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               ))}
             </div>

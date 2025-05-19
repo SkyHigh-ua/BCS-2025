@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Main } from "@/components/Dashboard/Main";
 import { Navbar } from "@/components/Dashboard/Navbar";
 import { Sidebar } from "@/components/Dashboard/Sidebar";
@@ -10,8 +10,10 @@ import { Site } from "@/models/Site";
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const [user, setUser] = useState<User | null>(null);
+  const { siteName } = useParams();
+  const [user, setUser] = useState<User>(() => ({} as User));
   const [sites, setSites] = useState<Site[]>([]);
+  const [selectedSite, setSelectedSite] = useState<Site | null>(null);
 
   useEffect(() => {
     const jwt = localStorage.getItem("jwt");
@@ -43,10 +45,31 @@ const Dashboard: React.FC = () => {
         ]);
         setUser(userData);
         setSites(userSites);
-        if (userSites.length > 0) {
-          navigate(`/dashboard/${userSites[0]}`);
-        } else {
-          navigate("/dashboard/add-site");
+
+        const currentPath = window.location.pathname;
+        const pathParts = currentPath.split("/").filter(Boolean);
+
+        if (pathParts[0] === "dashboard") {
+          const pathSiteName = pathParts[1];
+          if (pathSiteName && userSites.length > 0) {
+            const matchingSite = userSites.find(
+              (site) => site.name === pathSiteName
+            );
+
+            if (matchingSite) {
+              setSelectedSite(matchingSite);
+            }
+          } else if (
+            pathParts.length === 1 ||
+            (pathParts.length === 2 && pathParts[1] === "")
+          ) {
+            if (userSites.length > 0) {
+              setSelectedSite(userSites[0]);
+              navigate(`/dashboard/${userSites[0].name}`);
+            } else {
+              navigate("/dashboard/add-site");
+            }
+          }
         }
       } catch (error) {
         console.error("Failed to fetch dashboard data:", error);
@@ -60,13 +83,20 @@ const Dashboard: React.FC = () => {
     <div className="bg-white flex flex-col w-full min-h-screen">
       <Navbar user={user} />
       <div className="flex w-full flex-1">
-        <Sidebar
+        {sites && (
+          <Sidebar
+            sites={sites}
+            selectedSite={selectedSite}
+            setSelectedSite={setSelectedSite}
+          />
+        )}
+        <Main
           user={user}
           setUser={setUser}
           sites={sites}
           setSites={setSites}
+          setSelectedSite={setSelectedSite}
         />
-        <Main sites={sites} />
       </div>
     </div>
   );

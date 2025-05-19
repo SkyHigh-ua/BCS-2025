@@ -8,7 +8,7 @@ const getAuthHeaders = () => ({
 });
 
 export const fetchUsers = async (): Promise<User[]> => {
-  const response = await axios.get(`${API_BASE_URL}/`, {
+  const response = await axios.get(`${API_BASE_URL}/sub-users`, {
     headers: getAuthHeaders(),
   });
   return response.data;
@@ -16,7 +16,12 @@ export const fetchUsers = async (): Promise<User[]> => {
 
 export const updateUser = async (
   userId: string,
-  userData: { name?: string; email?: string }
+  userData: {
+    email?: string;
+    password?: string;
+    first_name?: string;
+    last_name?: string;
+  }
 ): Promise<User> => {
   const response = await axios.put(`${API_BASE_URL}/${userId}`, userData, {
     headers: getAuthHeaders(),
@@ -25,8 +30,11 @@ export const updateUser = async (
 };
 
 export const createUser = async (userData: {
-  name: string;
   email: string;
+  password: string;
+  first_name: string;
+  last_name: string;
+  company?: string;
 }): Promise<User> => {
   const response = await axios.post(`${API_BASE_URL}/sub-user`, userData, {
     headers: getAuthHeaders(),

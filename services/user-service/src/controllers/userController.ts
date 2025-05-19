@@ -21,6 +21,23 @@ export class UserController {
     }
   }
 
+  async getSubUsers(req: Request, res: Response) {
+    try {
+      if (!req.user || !("id" in req.user)) {
+        logger.info(`[${req.method}] ${req.url} - 401: User not authenticated`);
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const userId = req.user.id;
+      const users = await this.userRepository.getSubUsers(userId);
+      logger.info(`[${req.method}] ${req.url} - 200: Fetched sub-users`);
+      res.status(200).json(users);
+    } catch (error) {
+      logger.error("Error fetching sub-users:", error);
+      res.status(500).json({ message: "Error fetching sub-users", error });
+    }
+  }
+
   async getUserById(req: Request, res: Response) {
     try {
       const user = await this.userRepository.getUserById(Number(req.params.id));

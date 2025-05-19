@@ -21,10 +21,25 @@ export class UserRepository {
 
   async getAllUsers(): Promise<User[]> {
     try {
-      const result = await this.pool.query("SELECT * FROM users");
+      const result = await this.pool.query(
+        "SELECT id, first_name, last_name, email, role, parent_user FROM users"
+      );
       return result.rows;
     } catch (error) {
       logger.error("Error fetching all users:", error);
+      throw new Error("Database error");
+    }
+  }
+
+  async getSubUsers(userId: number): Promise<User[]> {
+    try {
+      const result = await this.pool.query(
+        "SELECT id, first_name, last_name, email, role, parent_user FROM users WHERE role = 2 AND parent_user = $1",
+        [userId]
+      );
+      return result.rows;
+    } catch (error) {
+      logger.error("Error fetching sub-users:", error);
       throw new Error("Database error");
     }
   }

@@ -14,7 +14,7 @@ import { useState } from "react";
 import { AlertTriangle } from "lucide-react";
 import { Switch } from "@/ui/switch";
 import { Site } from "@/models/Site";
-import { disconnectSite, deleteSite } from "@/services/siteService";
+import { updateSite, deleteSite } from "@/services/siteService";
 
 export default function General({
   site,
@@ -51,12 +51,28 @@ export default function General({
   ];
 
   const handleSubmit = () => {
-    // Handle form submission logic here
-    console.log("Updated Site Settings:", {
-      siteName,
-      siteDomain,
-      siteDescription,
-    });
+    updateSite(site.id, {
+      name: siteName,
+      domain: siteDomain,
+      description: siteDescription,
+    })
+      .then(() => {
+        setSites((prevSites) =>
+          prevSites.map((s) =>
+            s.id === site.id
+              ? {
+                  ...s,
+                  name: siteName,
+                  domain: siteDomain,
+                  description: siteDescription,
+                }
+              : s
+          )
+        );
+      })
+      .catch((error) => {
+        console.error("Failed to update site:", error);
+      });
   };
 
   return (

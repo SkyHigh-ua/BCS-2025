@@ -51,6 +51,28 @@ export const createGroup = async (groupData: {
   return response.data;
 };
 
+export const updateGroup = async (
+  groupId: string,
+  groupData: {
+    name?: string;
+    description?: string;
+  }
+): Promise<Group> => {
+  const response = await axios.put(
+    `${API_BASE_URL}/groups/${groupId}`,
+    groupData,
+    { headers: getAuthHeaders() }
+  );
+  return response.data;
+};
+
+export const deleteGroup = async (groupId: string): Promise<void> => {
+  const response = await axios.delete(`${API_BASE_URL}/groups/${groupId}`, {
+    headers: getAuthHeaders(),
+  });
+  return response.data;
+};
+
 export const getAllGroups = async (): Promise<Group[]> => {
   const response = await axios.get(`${API_BASE_URL}/groups`, {
     headers: getAuthHeaders(),
@@ -111,7 +133,7 @@ export const removeSiteFromGroup = async (
   siteId: string
 ): Promise<void> => {
   const response = await axios.delete(
-    `${API_BASE_URL}/groups/${groupId}/sites/${siteId}`,
+    `${API_BASE_URL}/groups/${groupId}/site/${siteId}`,
     {
       headers: getAuthHeaders(),
     }

@@ -5,24 +5,35 @@ import { Separator } from "@/components/ui/separator";
 import { Site } from "@/models/Site";
 import { useEffect, useState } from "react";
 import {
+  fetchAllModules,
   fetchModulesByTag,
   getModulesBySiteId,
+  toggleModuleForSite,
 } from "@/services/moduleService";
+import { toast } from "@/components/ui/use-toast";
 
-// TODO: add the actual widget logic
 export default function Widgets({ site }: { site: Site }): JSX.Element {
-  const [allModules, setAllModules] = useState([]);
-  const [siteModules, setSiteModules] = useState<string[]>([]);
+  const [modules, setModules] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const [allModulesData, siteModulesData] = await Promise.all([
-          fetchModulesByTag("all"),
-          getModulesBySiteId(site.id),
+          fetchAllModules(),
+          getModulesBySiteId(site.id).catch((error) => {
+            console.error("Error fetching site modules:", error);
+            return [];
+          }),
         ]);
-        setAllModules(allModulesData);
-        setSiteModules(siteModulesData.map((module) => module.id));
+
+        const siteModuleIds = siteModulesData.map((module) => module.id);
+
+        const merged = allModulesData.map((module) => ({
+          ...module,
+          enabled: siteModuleIds.includes(module.id),
+        }));
+
+        setModules(merged);
       } catch (error) {
         console.error("Error fetching modules:", error);
       }
@@ -31,10 +42,25 @@ export default function Widgets({ site }: { site: Site }): JSX.Element {
     fetchData();
   }, [site.id]);
 
-  const mergedModules = allModules.map((module) => ({
-    ...module,
-    enabled: siteModules.includes(module.id),
-  }));
+  const handleToggleModule = async (module) => {
+    try {
+      const result = await toggleModuleForSite(
+        site.id,
+        module.id,
+        !module.enabled
+      );
+
+      if (result.success) {
+        setModules((prevModules) =>
+          prevModules.map((mod) =>
+            mod.id === module.id ? { ...mod, enabled: !mod.enabled } : mod
+          )
+        );
+      }
+    } catch (error) {
+      console.error("Error toggling module:", error);
+    }
+  };
 
   return (
     <main
@@ -54,16 +80,19 @@ export default function Widgets({ site }: { site: Site }): JSX.Element {
         <Separator className="w-full" />
       </header>
       <div className="flex flex-wrap gap-2.5 py-2.5">
-        {mergedModules.map((module, index) => (
+        {modules.map((module, index) => (
           <Card key={index} className="flex-1 min-w-[250px]">
             <CardContent className="p-3">
               <div className="flex flex-col h-full">
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center justify-between">
                     <h3 className="font-medium text-base leading-5">
-                      {module.title}
+                      {module.name}
                     </h3>
-                    <Switch checked={module.enabled} />
+                    <Switch
+                      checked={module.enabled}
+                      onCheckedChange={() => handleToggleModule(module)}
+                    />
                   </div>
 
                   <p className="text-xs text-muted-foreground line-clamp-6">
@@ -71,10 +100,16 @@ export default function Widgets({ site }: { site: Site }): JSX.Element {
                   </p>
                 </div>
 
-                <div className="mt-auto pt-2.5">
-                  <Badge variant="default" className="text-xs font-semibold">
-                    {module.category}
-                  </Badge>
+                <div className="mt-auto pt-2.5 flex flex-wrap gap-1">
+                  {module.tags.map((tag: string, tagIndex: number) => (
+                    <Badge
+                      key={tagIndex}
+                      variant="default"
+                      className="text-xs font-semibold"
+                    >
+                      {tag}
+                    </Badge>
+                  ))}
                 </div>
               </div>
             </CardContent>
