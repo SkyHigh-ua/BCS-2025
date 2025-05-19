@@ -4,14 +4,13 @@
     UIComponents;
   const { MoreHorizontal } = LucidReact;
   const { Separator } = UIComponents;
-  const uptimeData = data.uptimeData;
-  const chartData = data.chartData;
-  // const uptimeData = {
-  // overall: "98.42%",
-  // last24Hours: "100.00%",
-  // last7Days: "100.00%",
-  // last30Days: "98.17%",
-  // };
+  const chartData = data;
+  const uptimeData = {
+    overall: chartData / chartData.length,
+    last24Hours: "100.00%",
+    last7Days: "100.00%",
+    last30Days: "98.17%",
+  };
 
   // const chartData = [
   // 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1,

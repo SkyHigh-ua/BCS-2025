@@ -96,15 +96,19 @@ export const removeModulesFromSite = async (
 };
 
 export const getWidgetComponent = async (
-  moduleId: string
+  moduleId: string,
+  siteId: string
 ): Promise<{
   module: Module;
   component: string;
   inputs: any;
 }> => {
-  const response = await axios.get(`${API_BASE_URL}/${moduleId}/widget`, {
-    headers: getAuthHeaders(),
-  });
+  const response = await axios.get(
+    `${API_BASE_URL}/${siteId}/widget/${moduleId}`,
+    {
+      headers: getAuthHeaders(),
+    }
+  );
   return response.data;
 };
 

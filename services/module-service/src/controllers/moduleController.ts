@@ -251,7 +251,7 @@ export class ModuleController {
 
   async getWidgetComponent(req: Request, res: Response) {
     try {
-      const moduleId = req.params.id;
+      const { moduleId, siteId } = req.params;
       logger.debug(
         `Attempting to fetch widget component for module ${moduleId} from ${this.moduleControllerUrl}`
       );
@@ -284,7 +284,7 @@ export class ModuleController {
       let componentData;
       try {
         const componentResponse = await axios.get(
-          `${this.moduleControllerUrl}/data/${moduleId}`,
+          `${this.moduleControllerUrl}/data/${moduleId}/site/${siteId}`,
           {
             headers: {
               Authorization: `Bearer ${

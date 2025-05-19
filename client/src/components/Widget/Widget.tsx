@@ -7,10 +7,11 @@ import * as LucidReact from "lucide-react";
 import { LoaderCircle } from "lucide-react";
 
 interface WidgetProps {
-  id: string;
+  widgetId: string;
+  siteId: string;
 }
 
-export default function Widget({ id }: WidgetProps): JSX.Element {
+export default function Widget({ widgetId, siteId }: WidgetProps): JSX.Element {
   const [module, setModule] = useState<any>(null);
   const [componentCode, setComponentCode] = useState<string | null>(null);
   const [data, setData] = useState<any>(null);
@@ -21,7 +22,7 @@ export default function Widget({ id }: WidgetProps): JSX.Element {
     const fetchWidgetData = async () => {
       try {
         setLoading(true);
-        const responseData = await getWidgetComponent(id);
+        const responseData = await getWidgetComponent(widgetId, siteId);
         setModule(responseData.module);
         setComponentCode(responseData.component);
         setData(responseData.inputs);
@@ -34,7 +35,7 @@ export default function Widget({ id }: WidgetProps): JSX.Element {
     };
 
     fetchWidgetData();
-  }, [id]);
+  }, [widgetId, siteId]);
 
   if (loading) {
     return (

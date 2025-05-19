@@ -39,7 +39,7 @@ router.delete(
   moduleController.deleteModule.bind(moduleController)
 );
 router.get(
-  "/:id/widget",
+  "/:siteId/widget/:moduleId",
   validateJWT,
   moduleController.getWidgetComponent.bind(moduleController)
 );

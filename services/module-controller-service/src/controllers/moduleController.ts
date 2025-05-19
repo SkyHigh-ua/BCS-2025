@@ -121,14 +121,19 @@ export class ModuleController {
             siteId ? `and site ${siteId}` : ""
           }`
         );
-        res.status(200).json({ inputs: {} });
+        res.status(404).json({
+          message: `No data found for module ${moduleId}${
+            siteId ? ` and site ${siteId}` : ""
+          }`,
+          inputs: {},
+        });
         return;
+      } else {
+        logger.info(`Module data found for module ${moduleId}`);
       }
 
-      logger.info(`Module data found for module ${moduleId}`);
-
       res.status(200).json({
-        inputs: moduleData.data || {},
+        inputs: moduleData?.data || {},
       });
     } catch (error) {
       logger.error("Error fetching module data:", error);

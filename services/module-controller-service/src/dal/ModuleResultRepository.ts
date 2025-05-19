@@ -21,15 +21,33 @@ export class ModuleResultRepository {
 
   async saveModuleResult(result: ModuleResult): Promise<ModuleResult> {
     try {
+      // First, get the site_modules id for the given site and module
+      const siteModuleQuery = `
+        SELECT id FROM site_modules
+        WHERE site_id = $1 AND module_id = $2
+      `;
+      const siteModuleResult = await this.pool.query(siteModuleQuery, [
+        result.siteId,
+        result.moduleId,
+      ]);
+
+      if (siteModuleResult.rows.length === 0) {
+        throw new Error(
+          `No site_module found for site ${result.siteId} and module ${result.moduleId}`
+        );
+      }
+
+      const siteModuleId = siteModuleResult.rows[0].id;
+
+      // Then insert into site_data with the correct site_modules id
       const query = `
-        INSERT INTO site_data (site_id, module_id, timestamp, data)
-        VALUES ($1, $2, $3, $4)
-        RETURNING id, site_id, module_id, timestamp, data
+        INSERT INTO site_data (module_id, timestamp, data)
+        VALUES ($1, $2, $3)
+        RETURNING id, module_id, timestamp, data
       `;
 
       const values = [
-        result.siteId,
-        result.moduleId,
+        siteModuleId,
         result.timestamp || new Date(),
         result.data,
       ];
@@ -38,10 +56,10 @@ export class ModuleResultRepository {
 
       return {
         id: res.rows[0].id,
-        siteId: res.rows[0].site_id,
-        moduleId: res.rows[0].module_id,
+        siteId: result.siteId, // We need to pass this through since it's not in the returned data
+        moduleId: result.moduleId, // We need to pass this through since it's not directly in the returned data
         timestamp: res.rows[0].timestamp,
-        data: res.rows[0].result_data,
+        data: res.rows[0].data, // Correct column name is 'data', not 'result_data'
       };
     } catch (error) {
       logger.error(`Error saving module result:`, error);
@@ -52,10 +70,11 @@ export class ModuleResultRepository {
   async getResultsBySiteId(siteId: number): Promise<ModuleResult[]> {
     try {
       const query = `
-        SELECT id, site_id, module_id, timestamp, data
-        FROM site_data
-        WHERE site_id = $1
-        ORDER BY timestamp DESC
+        SELECT sd.id, sm.site_id, sm.module_id, sd.timestamp, sd.data
+        FROM site_data sd
+        JOIN site_modules sm ON sd.module_id = sm.id
+        WHERE sm.site_id = $1
+        ORDER BY sd.timestamp DESC
       `;
 
       const res = await this.pool.query(query, [siteId]);
@@ -65,7 +84,7 @@ export class ModuleResultRepository {
         siteId: row.site_id,
         moduleId: row.module_id,
         timestamp: row.timestamp,
-        data: row.result_data,
+        data: row.data, // Correct column name
       }));
     } catch (error) {
       logger.error(`Error fetching module results for site ${siteId}:`, error);
@@ -76,10 +95,11 @@ export class ModuleResultRepository {
   async getResultsByModuleId(moduleId: number): Promise<ModuleResult[]> {
     try {
       const query = `
-        SELECT id, site_id, module_id, timestamp, data
-        FROM site_data
-        WHERE module_id = $1
-        ORDER BY timestamp DESC
+        SELECT sd.id, sm.site_id, sm.module_id, sd.timestamp, sd.data
+        FROM site_data sd
+        JOIN site_modules sm ON sd.module_id = sm.id
+        WHERE sm.module_id = $1
+        ORDER BY sd.timestamp DESC
       `;
 
       const res = await this.pool.query(query, [moduleId]);
@@ -89,7 +109,7 @@ export class ModuleResultRepository {
         siteId: row.site_id,
         moduleId: row.module_id,
         timestamp: row.timestamp,
-        data: row.result_data,
+        data: row.data, // Correct column name
       }));
     } catch (error) {
       logger.error(
@@ -106,10 +126,11 @@ export class ModuleResultRepository {
   ): Promise<ModuleResult | null> {
     try {
       const query = `
-        SELECT id, site_id, module_id, timestamp, data
-        FROM site_data
-        WHERE site_id = $1 AND module_id = $2
-        ORDER BY timestamp DESC
+        SELECT sd.id, sm.site_id, sm.module_id, sd.timestamp, sd.data
+        FROM site_data sd
+        JOIN site_modules sm ON sd.module_id = sm.id
+        WHERE sm.site_id = $1 AND sm.module_id = $2
+        ORDER BY sd.timestamp DESC
         LIMIT 1
       `;
 
@@ -124,7 +145,7 @@ export class ModuleResultRepository {
         siteId: res.rows[0].site_id,
         moduleId: res.rows[0].module_id,
         timestamp: res.rows[0].timestamp,
-        data: res.rows[0].result_data,
+        data: res.rows[0].data, // Correct column name
       };
     } catch (error) {
       logger.error(
@@ -140,11 +161,11 @@ export class ModuleResultRepository {
   ): Promise<ModuleResult | null> {
     try {
       const query = `
-        SELECT site_data.id, site_modules.site_id, site_modules.module_id, site_data.timestamp, site_data.data
-        FROM site_data
-        INNER JOIN site_modules ON site_data.module_id = site_modules.id
-        WHERE site_modules.module_id = $1
-        ORDER BY site_data.timestamp DESC
+        SELECT sd.id, sm.site_id, sm.module_id, sd.timestamp, sd.data
+        FROM site_data sd
+        JOIN site_modules sm ON sd.module_id = sm.id
+        WHERE sm.module_id = $1
+        ORDER BY sd.timestamp DESC
         LIMIT 1
       `;
 
@@ -159,7 +180,7 @@ export class ModuleResultRepository {
         siteId: res.rows[0].site_id,
         moduleId: res.rows[0].module_id,
         timestamp: res.rows[0].timestamp,
-        data: res.rows[0].result_data,
+        data: res.rows[0].data, // Correct column name
       };
     } catch (error) {
       logger.error(
