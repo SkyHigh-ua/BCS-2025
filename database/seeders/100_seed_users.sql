@@ -1,5 +1,4 @@
 INSERT INTO public.users (first_name, last_name, password, email, role)
 VALUES 
-    ('Admin', 'User', 'hashed_password', 'admin@example.com', 0),
-    ('John', 'Doe', 'hashed_password', 'john.doe@example.com', 1)
+    ('Test', 'User', '$2b$10$Z9G3GjRy4sTqmrEI0ANHn.Nc8KUzQ0DiPnPROhz9.li3zbRWKeFXq', 'admin@example.com', 0)
 ON CONFLICT DO NOTHING;
