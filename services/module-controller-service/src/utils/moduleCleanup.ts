@@ -17,15 +17,20 @@ export class ModuleCleanupService {
     logger.info("Cache reference getter has been set for cleanup service");
   }
 
-  public startCleanupScheduler(): void {
-    // Run cleanup once a day (86400000 ms = 24 hours)
+  public startCleanupScheduler(intervalMs: number = 86400000): void {
+    // Default: Run cleanup once a day (86400000 ms = 24 hours)
     this.cleanupInterval = setInterval(() => {
       this.cleanupOldModules();
-    }, 86400000);
+    }, intervalMs);
 
+    // Initial cleanup when starting the scheduler
     this.cleanupOldModules();
 
-    logger.info("Scheduled automatic cleanup of old module directories");
+    logger.info(
+      `Scheduled automatic cleanup of old module directories every ${
+        intervalMs / (60 * 60 * 1000)
+      } hours`
+    );
   }
 
   public stopCleanupScheduler(): void {

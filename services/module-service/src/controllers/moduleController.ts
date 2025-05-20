@@ -281,6 +281,36 @@ export class ModuleController {
         componentContent = null;
       }
 
+      try {
+        logger.debug(
+          `Executing data collection for module ${moduleId} and site ${siteId} before fetching data`
+        );
+        await axios.post(
+          `${this.moduleControllerUrl}/execute/${moduleId}`,
+          { siteId },
+          {
+            headers: {
+              Authorization: `Bearer ${
+                req.headers.authorization?.split(" ")[1]
+              }`,
+            },
+          }
+        );
+        logger.debug(
+          `Successfully executed data collection for module ${moduleId}`
+        );
+      } catch (execError: any) {
+        logger.warn(
+          `Error executing data collection before fetching data: ${
+            execError.message
+          }${
+            execError.response
+              ? ` with status ${execError.response.status}`
+              : ""
+          }. Will still attempt to get existing data.`
+        );
+      }
+
       let componentData;
       try {
         const componentResponse = await axios.get(

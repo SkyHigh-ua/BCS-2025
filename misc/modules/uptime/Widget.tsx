@@ -4,7 +4,7 @@
     UIComponents;
   const { MoreHorizontal } = LucidReact;
   const { Separator } = UIComponents;
-  const chartData = data;
+  const chartData = data.uptimeData;
   const uptimeData = {
     overall: chartData / chartData.length,
     last24Hours: "100.00%",
