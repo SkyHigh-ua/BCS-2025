@@ -16,7 +16,7 @@ jobs:
   # Job to detect changes in each directory
   changes:
     runs-on: ubuntu-latest
-    if: ${{ !contains(github.event.head_commit.message, '[force]') }}
+    # Always run the changes job to detect file changes
     outputs:
       infrastructure: ${{ steps.filter.outputs.infrastructure }}
       database: ${{ steps.filter.outputs.database }}
@@ -50,8 +50,8 @@ jobs:
               - 'build/Dockerfile.client'
 
   infrastructure:
-    needs: [changes]
-    if: ${{ (needs.changes.outputs.infrastructure == 'true' || contains(github.event.head_commit.message, '[force]')) }}
+    needs: changes
+    if: ${{ needs.changes.outputs.infrastructure == 'true' || env.FORCE_BUILD == 'true' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -92,8 +92,10 @@ jobs:
           terraform apply -auto-approve tfplan
 
   db:
-    needs: [infrastructure]
-    if: ${{ (needs.changes.outputs.database == 'true' || contains(github.event.head_commit.message, '[force]')) && (needs.infrastructure.result == 'success' || needs.infrastructure.result == 'cancelled') }}
+    needs: [changes, infrastructure]
+    if:
+      ${{ (needs.changes.outputs.database == 'true' || env.FORCE_BUILD == 'true') &&
+      (needs.infrastructure.result == 'success' || needs.infrastructure.result == 'skipped') }}
     runs-on: ubuntu-latest
 
     steps:
@@ -188,8 +190,10 @@ jobs:
             -c "INSERT INTO $SEED_MARKER VALUES (CURRENT_TIMESTAMP);"
 
   services:
-    needs: [db]
-    if: ${{ (needs.changes.outputs.services == 'true' || contains(github.event.head_commit.message, '[force]')) && (needs.db.result == 'success' || needs.db.result == 'cancelled') }}
+    needs: [changes, db]
+    if:
+      ${{ (needs.changes.outputs.services == 'true' || env.FORCE_BUILD == 'true') &&
+      (needs.db.result == 'success' || needs.db.result == 'skipped') }}
     runs-on: ubuntu-latest
 
     steps:
@@ -287,8 +291,10 @@ jobs:
           done
 
   gateway:
-    needs: [services]
-    if: ${{ (needs.changes.outputs.gateway == 'true' || contains(github.event.head_commit.message, '[force]')) && (needs.services.result == 'success' || needs.services.result == 'cancelled') }}
+    needs: [changes, services]
+    if:
+      ${{ (needs.changes.outputs.gateway == 'true' || env.FORCE_BUILD == 'true') &&
+      (needs.services.result == 'success' || needs.services.result == 'skipped') }}
     runs-on: ubuntu-latest
 
     steps:
@@ -327,8 +333,10 @@ jobs:
           fi
 
   client:
-    needs: [gateway]
-    if: ${{ (needs.changes.outputs.client == 'true' || contains(github.event.head_commit.message, '[force]')) && (needs.gateway.result == 'success' || needs.gateway.result == 'cancelled') }}
+    needs: [changes, gateway]
+    if:
+      ${{ (needs.changes.outputs.client == 'true' || env.FORCE_BUILD == 'true') &&
+      (needs.gateway.result == 'success' || needs.gateway.result == 'skipped') }}
     runs-on: ubuntu-latest
 
     steps:
