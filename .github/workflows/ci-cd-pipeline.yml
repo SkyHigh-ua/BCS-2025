@@ -117,17 +117,99 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Get RDS Information
+        id: rds-info
+        run: |
+          # Get RDS endpoint from terraform output or SSM Parameter Store
+          RDS_ENDPOINT=$(aws ssm get-parameter --name "/${{ vars.PROJECT_NAME }}/rds/endpoint" --query "Parameter.Value" --output text)
+          RDS_USERNAME=$(aws ssm get-parameter --name "/${{ vars.PROJECT_NAME }}/rds/username" --query "Parameter.Value" --output text)
+          RDS_PASSWORD=$(aws ssm get-parameter --name "/${{ vars.PROJECT_NAME }}/rds/password" --with-decryption --query "Parameter.Value" --output text)
+          DB_NAME=$(aws ssm get-parameter --name "/${{ vars.PROJECT_NAME }}/rds/dbname" --query "Parameter.Value" --output text)
+
+          echo "::add-mask::$RDS_PASSWORD"
+          echo "RDS_ENDPOINT=$RDS_ENDPOINT" >> $GITHUB_OUTPUT
+          echo "RDS_USERNAME=$RDS_USERNAME" >> $GITHUB_OUTPUT
+          echo "DB_NAME=$DB_NAME" >> $GITHUB_OUTPUT
+          echo "RDS_PASSWORD=$RDS_PASSWORD" >> $GITHUB_ENV
+
+      - name: Install PostgreSQL Client Tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
       - name: Run Database Migrations
         run: |
           cd ./database
           echo "Running database migrations..."
-          # TODO: Add database migration
+
+          # Create a pgpass file for secure connection
+          echo "${{ steps.rds-info.outputs.RDS_ENDPOINT }}:5432:${{ steps.rds-info.outputs.DB_NAME }}:${{ steps.rds-info.outputs.RDS_USERNAME }}:$RDS_PASSWORD" > ~/.pgpass
+          chmod 600 ~/.pgpass
+
+          # Run migrations in order
+          for file in $(ls ./migrations/*.sql 2>/dev/null || echo ""); do
+            if [ -f "$file" ]; then
+              echo "Running migration: $file"
+              PGPASSFILE=~/.pgpass psql -h ${{ steps.rds-info.outputs.RDS_ENDPOINT }} \
+                -U ${{ steps.rds-info.outputs.RDS_USERNAME }} \
+                -d ${{ steps.rds-info.outputs.DB_NAME }} \
+                -f "$file"
+            fi
+          done
 
       - name: Seed Database
         run: |
           cd ./database
           echo "Seeding database..."
-          # TODO: Add database seeding
+
+          # Check if the database has already been seeded
+          SEED_MARKER="seed_status"
+          SEED_CHECK=$(PGPASSFILE=~/.pgpass psql -h ${{ steps.rds-info.outputs.RDS_ENDPOINT }} \
+            -U ${{ steps.rds-info.outputs.RDS_USERNAME }} \
+            -d ${{ steps.rds-info.outputs.DB_NAME }} \
+            -t -c "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = '$SEED_MARKER');" 2>/dev/null || echo "f")
+
+          if [[ "$SEED_CHECK" == *"t"* ]]; then
+            echo "Database already seeded. Checking if forced seed is required."
+            
+            # Check if FORCE_SEED is set in environment or input variables
+            if [[ "${{ github.event.inputs.force_seed }}" == "true" ]]; then
+              echo "Forced seed requested, proceeding with seeding."
+            else
+              echo "Skipping seed as database is already seeded."
+              exit 0
+            fi
+          fi
+
+          # Run seed files
+          for file in $(ls ./seeders/*.sql 2>/dev/null || echo ""); do
+            if [ -f "$file" ]; then
+              echo "Running seed: $file"
+              PGPASSFILE=~/.pgpass psql -h ${{ steps.rds-info.outputs.RDS_ENDPOINT }} \
+                -U ${{ steps.rds-info.outputs.RDS_USERNAME }} \
+                -d ${{ steps.rds-info.outputs.DB_NAME }} \
+                -f "$file"
+            fi
+          done
+
+          # Mark database as seeded
+          PGPASSFILE=~/.pgpass psql -h ${{ steps.rds-info.outputs.RDS_ENDPOINT }} \
+            -U ${{ steps.rds-info.outputs.RDS_USERNAME }} \
+            -d ${{ steps.rds-info.outputs.DB_NAME }} \
+            -c "CREATE TABLE IF NOT EXISTS $SEED_MARKER (seeded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);"
+
+          # Insert a record to track when seeding was performed
+          PGPASSFILE=~/.pgpass psql -h ${{ steps.rds-info.outputs.RDS_ENDPOINT }} \
+            -U ${{ steps.rds-info.outputs.RDS_USERNAME }} \
+            -d ${{ steps.rds-info.outputs.DB_NAME }} \
+            -c "INSERT INTO $SEED_MARKER VALUES (CURRENT_TIMESTAMP);"
 
   services:
     needs: [changes, default-outputs, db]
