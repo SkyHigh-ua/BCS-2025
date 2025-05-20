@@ -62,7 +62,6 @@ jobs:
       - run: echo "Force build triggered via commit message containing [force]. Setting all outputs to true."
 
   infrastructure:
-    needs: [changes, default-outputs]
     if: ${{ (needs.changes.outputs.infrastructure == 'true' || contains(github.event.head_commit.message, '[force]')) }}
     runs-on: ubuntu-latest
 
@@ -104,7 +103,7 @@ jobs:
           terraform apply -auto-approve tfplan
 
   db:
-    needs: [changes, default-outputs, infrastructure]
+    needs: [infrastructure]
     if: ${{ (needs.changes.outputs.database == 'true' || contains(github.event.head_commit.message, '[force]')) && (needs.infrastructure.result == 'success' || needs.infrastructure.result == 'cancelled') }}
     runs-on: ubuntu-latest
 
@@ -200,7 +199,7 @@ jobs:
             -c "INSERT INTO $SEED_MARKER VALUES (CURRENT_TIMESTAMP);"
 
   services:
-    needs: [changes, default-outputs, db]
+    needs: [db]
     if: ${{ (needs.changes.outputs.services == 'true' || contains(github.event.head_commit.message, '[force]')) && (needs.db.result == 'success' || needs.db.result == 'cancelled') }}
     runs-on: ubuntu-latest
 
@@ -299,7 +298,7 @@ jobs:
           done
 
   gateway:
-    needs: [changes, default-outputs, services]
+    needs: [services]
     if: ${{ (needs.changes.outputs.gateway == 'true' || contains(github.event.head_commit.message, '[force]')) && (needs.services.result == 'success' || needs.services.result == 'cancelled') }}
     runs-on: ubuntu-latest
 
@@ -339,7 +338,7 @@ jobs:
           fi
 
   client:
-    needs: [changes, default-outputs, gateway]
+    needs: [gateway]
     if: ${{ (needs.changes.outputs.client == 'true' || contains(github.event.head_commit.message, '[force]')) && (needs.gateway.result == 'success' || needs.gateway.result == 'cancelled') }}
     runs-on: ubuntu-latest
 
