@@ -9,10 +9,6 @@ on:
 env:
   AWS_REGION: ${{ vars.AWS_REGION }}
   ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-  PG_PASS: ${{ secrets.PG_PASS }}
-  DB_NAME: ${{ vars.DB_NAME }}
-  RDS_USERNAME: ${{ vars.RDS_USERNAME }}
-  RDS_ENDPOINT: ${{ secrets.RDS_ENDPOINT }}
 
 jobs:
   # Job to detect changes in each directory
@@ -92,89 +88,6 @@ jobs:
         run: |
           cd ./terraform/infrastructure
           terraform apply -auto-approve tfplan
-
-  db:
-    needs: [changes, infrastructure]
-    if:
-      ${{ (needs.changes.outputs.database == 'true' || contains(github.event.head_commit.message, '[force]') == 'true') &&
-      (needs.infrastructure.result == 'success' || needs.infrastructure.result == 'skipped') }}
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Install PostgreSQL Client Tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y postgresql-client
-
-      - name: Run Database Migrations
-        run: |
-          cd ./database
-          echo "Running database migrations..."
-
-          # Create a pgpass file for secure connection
-          echo ${{ env.PG_PASS }} > ~/.pgpass
-          chmod 600 ~/.pgpass
-
-          # Run migrations in order
-          for file in $(ls ./migrations/*.sql 2>/dev/null || echo ""); do
-            if [ -f "$file" ]; then
-              echo "Running migration: $file"
-              PGPASSFILE=~/.pgpass psql -h ${{ env.RDS_ENDPOINT }} \
-                -U ${{ env.RDS_USERNAME }} \
-                -d ${{ env.DB_NAME }} \
-                -f "$file"
-            fi
-          done
-
-      - name: Seed Database
-        run: |
-          cd ./database
-          echo "Seeding database..."
-
-          # Check if the database has already been seeded
-          SEED_MARKER="seed_status"
-          SEED_CHECK=$(PGPASSFILE=~/.pgpass psql -h ${{ env.RDS_ENDPOINT }} \
-            -U ${{ env.RDS_USERNAME }} \
-            -d ${{ env.DB_NAME }} \
-            -t -c "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = '$SEED_MARKER');" 2>/dev/null || echo "f")
-
-          if [[ "$SEED_CHECK" == *"t"* ]]; then
-            echo "Database already seeded. Checking if forced seed is required."
-            exit 0
-          fi
-
-          # Run seed files
-          for file in $(ls ./seeders/*.sql 2>/dev/null || echo ""); do
-            if [ -f "$file" ]; then
-              echo "Running seed: $file"
-              PGPASSFILE=~/.pgpass psql -h ${{ env.RDS_ENDPOINT }} \
-                -U ${{ env.RDS_USERNAME }} \
-                -d ${{ env.DB_NAME }} \
-                -f "$file"
-            fi
-          done
-
-          # Mark database as seeded
-          PGPASSFILE=~/.pgpass psql -h ${{ env.RDS_ENDPOINT }} \
-            -U ${{ env.RDS_USERNAME }} \
-            -d ${{ env.DB_NAME }} \
-            -c "CREATE TABLE IF NOT EXISTS $SEED_MARKER (seeded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);"
-
-          # Insert a record to track when seeding was performed
-          PGPASSFILE=~/.pgpass psql -h ${{ env.RDS_ENDPOINT }} \
-            -U ${{ env.RDS_USERNAME }} \
-            -d ${{ env.DB_NAME }} \
-            -c "INSERT INTO $SEED_MARKER VALUES (CURRENT_TIMESTAMP);"
 
   services:
     needs: [changes, db]
