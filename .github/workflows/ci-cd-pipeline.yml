@@ -62,6 +62,7 @@ jobs:
       - run: echo "Force build triggered via commit message containing [force]. Setting all outputs to true."
 
   infrastructure:
+    needs: [changes, default-outputs]
     if: ${{ (needs.changes.outputs.infrastructure == 'true' || contains(github.event.head_commit.message, '[force]')) }}
     runs-on: ubuntu-latest
 
