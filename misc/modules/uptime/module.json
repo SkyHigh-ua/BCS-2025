@@ -11,10 +11,27 @@
   },
   "outputs": {
     "uptimeData": {
+      "type": "array",
+      "description": "Array of uptime status values (1 for up, 0 for down)"
+    },
+    "uptimeStats": {
       "overall": {
         "type": "string",
-        "description": "Status of the system uptime"
+        "description": "Overall uptime percentage"
+      },
+      "last24Hours": {
+        "type": "string",
+        "description": "Uptime for the last 24 hours"
+      },
+      "last7Days": {
+        "type": "string",
+        "description": "Uptime for the last 7 days"
+      },
+      "last30Days": {
+        "type": "string",
+        "description": "Uptime for the last 30 days"
       }
+    }
   },
   "tags": ["uptime"],
   "requirements": []

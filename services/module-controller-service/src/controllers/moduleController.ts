@@ -132,8 +132,29 @@ export class ModuleController {
         logger.info(`Module data found for module ${moduleId}`);
       }
 
+      // Process the data - check if we need to extract JSON from npm output
+      let processedData = moduleData.data;
+
+      // If data contains npm output, try to extract the JSON
+      if (processedData.output && typeof processedData.output === "string") {
+        try {
+          // Find the JSON in the output by looking for the first '{' and last '}'
+          const jsonStart = processedData.output.indexOf("{");
+          const jsonEnd = processedData.output.lastIndexOf("}") + 1;
+
+          if (jsonStart >= 0 && jsonEnd > jsonStart) {
+            const jsonStr = processedData.output.substring(jsonStart, jsonEnd);
+            processedData = JSON.parse(jsonStr);
+          }
+        } catch (parseError) {
+          logger.warn(`Failed to parse module output as JSON: ${parseError}`);
+        }
+      }
+
+      console.log("Processed module data:", processedData);
+
       res.status(200).json({
-        inputs: moduleData?.data || {},
+        inputs: processedData || {},
       });
     } catch (error) {
       logger.error("Error fetching module data:", error);
@@ -232,7 +253,17 @@ export class ModuleController {
 
         let result;
         try {
-          result = JSON.parse(processResult.stdout);
+          // Find the JSON in the output by looking for the first '{' and last '}'
+          const jsonStart = processResult.stdout.indexOf("{");
+          const jsonEnd = processResult.stdout.lastIndexOf("}") + 1;
+
+          if (jsonStart >= 0 && jsonEnd > jsonStart) {
+            const jsonStr = processResult.stdout.substring(jsonStart, jsonEnd);
+            result = JSON.parse(jsonStr);
+          } else {
+            // If we couldn't find JSON boundaries, try parsing the whole thing
+            result = JSON.parse(processResult.stdout);
+          }
         } catch (error) {
           logger.warn(
             `Could not parse module output as JSON, returning raw output`

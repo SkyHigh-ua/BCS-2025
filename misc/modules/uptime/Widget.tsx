@@ -4,18 +4,13 @@
     UIComponents;
   const { MoreHorizontal } = LucidReact;
   const { Separator } = UIComponents;
-  const chartData = data.uptimeData;
-  const uptimeData = {
-    overall: chartData / chartData.length,
-    last24Hours: "100.00%",
-    last7Days: "100.00%",
-    last30Days: "98.17%",
+  const chartData = data?.uptimeData || [];
+  const uptimeStats = data?.uptimeStats || {
+    overall: "0.00%",
+    last24Hours: "0.00%",
+    last7Days: "0.00%",
+    last30Days: "0.00%",
   };
-
-  // const chartData = [
-  // 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1,
-  // 1, 1, 1, 1, 1,
-  // ];
 
   return (
     <Card className="w-[398px] shadow-sm">
@@ -37,7 +32,7 @@
       <CardContent className="pb-6">
         <div className="flex items-center justify-between mb-2">
           <div className="text-sm text-muted-foreground">Overall Uptime</div>
-          <div className="text-sm text-[#22c55e]">{uptimeData.overall}</div>
+          <div className="text-sm text-[#22c55e]">{uptimeStats.overall}</div>
         </div>
         <Separator className="mb-4" />
 
@@ -56,17 +51,17 @@
         {/* Uptime Stats */}
         <div className="flex justify-between items-center">
           <div className="text-center">
-            <div className="text-xl font-bold">{uptimeData.last24Hours}</div>
+            <div className="text-xl font-bold">{uptimeStats.last24Hours}</div>
             <div className="text-xs">Last 24 hours</div>
           </div>
 
           <div className="text-center">
-            <div className="text-xl font-bold">{uptimeData.last7Days}</div>
+            <div className="text-xl font-bold">{uptimeStats.last7Days}</div>
             <div className="text-xs">Last 7 days</div>
           </div>
 
           <div className="text-center">
-            <div className="text-xl font-bold">{uptimeData.last30Days}</div>
+            <div className="text-xl font-bold">{uptimeStats.last30Days}</div>
             <div className="text-xs">Last 30 days</div>
           </div>
         </div>
