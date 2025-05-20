@@ -39,7 +39,7 @@ export default function Widget({ widgetId, siteId }: WidgetProps): JSX.Element {
 
   if (loading) {
     return (
-      <Card className="flex flex-col p-4 items-center justify-center">
+      <Card className="flex flex-col p-4 items-center justify-center border-gray-300">
         <LoaderCircle className="w-8 h-8 animate-spin text-primary mb-2" />
         <p>Loading widget...</p>
       </Card>
@@ -53,22 +53,20 @@ export default function Widget({ widgetId, siteId }: WidgetProps): JSX.Element {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <h2>{module?.name}</h2>
-      </CardHeader>
-      <CardContent>
-        <p>{module?.description}</p>
-        {componentCode ? (
-          <StringToReactComponent data={{ UIComponents, LucidReact, data }}>
-            {componentCode}
-          </StringToReactComponent>
-        ) : (
-          <CardHeader>
-            <h2>No widget component available</h2>
-          </CardHeader>
-        )}
-      </CardContent>
+    <Card
+      className={`max-w-fit ${
+        componentCode ? "" : "text-amber-500 border-red-500 p-4"
+      }`}
+    >
+      {componentCode ? (
+        <StringToReactComponent data={{ UIComponents, LucidReact, data }}>
+          {componentCode}
+        </StringToReactComponent>
+      ) : (
+        <CardHeader>
+          <h2>No widget component available</h2>
+        </CardHeader>
+      )}
     </Card>
   );
 }

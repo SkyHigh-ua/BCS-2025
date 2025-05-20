@@ -323,9 +323,11 @@ export class ModuleController {
             },
           }
         );
-        componentData = componentResponse.data.component;
+        componentData = componentResponse.data;
         logger.debug(
-          `Successfully received widget data from module controller`
+          `Successfully received widget data from module controller: ${JSON.stringify(
+            componentData
+          )}}`
         );
       } catch (error: any) {
         logger.error(
@@ -340,7 +342,10 @@ export class ModuleController {
         `[${req.method}] ${req.url} - 200: Widget component and data fetched`
       );
 
+      const moduleInfo = await this.moduleRepository.getModuleById(moduleId);
+
       res.status(200).json({
+        module: moduleInfo,
         component: componentContent,
         inputs: componentData,
       });

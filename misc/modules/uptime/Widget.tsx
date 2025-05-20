@@ -23,7 +23,10 @@
               Monitor site uptime status and response time history.
             </CardDescription>
           </div>
-          <div className="w-[21px] h-[21px] flex items-center justify-center bg-white rounded-md">
+          <div
+            className="flex items-center justify-center bg-white rounded-md"
+            style={{ width: "21px", height: "21px" }}
+          >
             <MoreHorizontal className="h-4 w-4" />
           </div>
         </div>
@@ -31,18 +34,26 @@
       <CardContent className="pb-6">
         <div className="flex items-center justify-between mb-2">
           <div className="text-sm text-muted-foreground">Overall Uptime</div>
-          <div className="text-sm text-[#22c55e]">{uptimeStats.overall}</div>
+          <div className="text-sm" style={{ color: "#22c55e" }}>
+            {uptimeStats.overall}
+          </div>
         </div>
         <Separator className="mb-4" />
 
         {/* Uptime Chart */}
-        <div className="flex items-end justify-around h-[34px] gap-[3px] mb-6">
+        <div
+          className="flex items-end justify-around mb-6"
+          style={{ gap: "3px", height: "34px" }}
+        >
           {chartData.map((status, index) => (
             <div
               key={index}
-              className={`w-[8.3px] h-[33.7px] rounded-sm ${
-                status === 1 ? "bg-[#22c55e]" : "bg-red-500"
-              }`}
+              className="rounded-sm"
+              style={{
+                width: "8.3px",
+                height: "33.7px",
+                backgroundColor: status === 1 ? "#22c55e" : "#ef4444",
+              }}
             />
           ))}
         </div>

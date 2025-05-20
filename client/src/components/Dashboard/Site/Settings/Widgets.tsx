@@ -10,7 +10,6 @@ import {
   getModulesBySiteId,
   toggleModuleForSite,
 } from "@/services/moduleService";
-import { toast } from "@/components/ui/use-toast";
 
 export default function Widgets({ site }: { site: Site }): JSX.Element {
   const [modules, setModules] = useState([]);
@@ -43,6 +42,12 @@ export default function Widgets({ site }: { site: Site }): JSX.Element {
   }, [site.id]);
 
   const handleToggleModule = async (module) => {
+    setModules((prevModules) =>
+      prevModules.map((mod) =>
+        mod.id === module.id ? { ...mod, enabled: !mod.enabled } : mod
+      )
+    );
+
     try {
       const result = await toggleModuleForSite(
         site.id,
@@ -50,15 +55,20 @@ export default function Widgets({ site }: { site: Site }): JSX.Element {
         !module.enabled
       );
 
-      if (result.success) {
+      if (!result.success) {
         setModules((prevModules) =>
           prevModules.map((mod) =>
-            mod.id === module.id ? { ...mod, enabled: !mod.enabled } : mod
+            mod.id === module.id ? { ...mod, enabled: module.enabled } : mod
           )
         );
       }
     } catch (error) {
       console.error("Error toggling module:", error);
+      setModules((prevModules) =>
+        prevModules.map((mod) =>
+          mod.id === module.id ? { ...mod, enabled: module.enabled } : mod
+        )
+      );
     }
   };
 

@@ -24,7 +24,8 @@
           <div>
             <CardTitle className="text-foreground">Domain info</CardTitle>
             <CardDescription>
-              Domain Profile (Last check: April 23, 2025 5:09 am)
+              Domain Profile (Last check:{" "}
+              {data?.timestamp || new Date().toLocaleString()})
             </CardDescription>
           </div>
           <div className="w-[21px] h-[21px] flex items-center justify-center bg-white rounded-md">

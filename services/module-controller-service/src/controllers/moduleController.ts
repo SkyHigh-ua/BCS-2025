@@ -125,7 +125,6 @@ export class ModuleController {
           message: `No data found for module ${moduleId}${
             siteId ? ` and site ${siteId}` : ""
           }`,
-          inputs: {},
         });
         return;
       } else {
@@ -151,11 +150,7 @@ export class ModuleController {
         }
       }
 
-      console.log("Processed module data:", processedData);
-
-      res.status(200).json({
-        inputs: processedData || {},
-      });
+      res.status(200).json(processedData || {});
     } catch (error) {
       logger.error("Error fetching module data:", error);
       res.status(500).json({

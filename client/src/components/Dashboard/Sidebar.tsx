@@ -46,7 +46,6 @@ export function Sidebar({
   const [sidebarWidth, setSidebarWidth] = useState(244);
   const sidebarRef = useRef<HTMLDivElement | null>(null);
   const isResizing = useRef(false);
-  const [hasPlugins, setHasPlugins] = useState(false);
 
   const handleMouseMove = (e: MouseEvent) => {
     if (isResizing.current && sidebarRef.current) {
@@ -103,24 +102,6 @@ export function Sidebar({
       }
     }
   }, [sites, selectedSite, setSelectedSite]);
-
-  useEffect(() => {
-    if (selectedSite) {
-      const checkPlugins = async () => {
-        try {
-          const plugins = await fetchSitePlugin(selectedSite.id);
-          setHasPlugins(plugins && plugins.length > 0);
-        } catch (error) {
-          console.error("Failed to fetch plugins:", error);
-          setHasPlugins(false);
-        }
-      };
-
-      checkPlugins();
-    } else {
-      setHasPlugins(false);
-    }
-  }, [selectedSite]);
 
   return (
     <div
@@ -264,25 +245,24 @@ export function Sidebar({
                       Widgets
                     </NavigationMenuLink>
                   </Button>
-                  {hasPlugins && (
-                    <Button
-                      variant="ghost"
-                      className="flex h-7 items-center gap-2 px-4 py-2 justify-start rounded-md w-full"
-                      asChild
-                      disabled={!selectedSite}
+                  =
+                  <Button
+                    variant="ghost"
+                    className="flex h-7 items-center gap-2 px-4 py-2 justify-start rounded-md w-full"
+                    asChild
+                    disabled={!selectedSite}
+                  >
+                    <NavigationMenuLink
+                      href={
+                        selectedSite
+                          ? `/dashboard/${selectedSite.name}/settings/plugins`
+                          : "/dashboard/"
+                      }
+                      className="flex items-start w-full text-sm font-normal flex-1 text-left overflow-hidden text-ellipsis whitespace-nowrap"
                     >
-                      <NavigationMenuLink
-                        href={
-                          selectedSite
-                            ? `/dashboard/${selectedSite.name}/settings/plugins`
-                            : "/dashboard/"
-                        }
-                        className="flex items-start w-full text-sm font-normal flex-1 text-left overflow-hidden text-ellipsis whitespace-nowrap"
-                      >
-                        Plugins
-                      </NavigationMenuLink>
-                    </Button>
-                  )}
+                      Plugins
+                    </NavigationMenuLink>
+                  </Button>
                   <Button
                     variant="ghost"
                     className="flex h-7 items-center gap-2 px-4 py-2 justify-start rounded-md w-full"
