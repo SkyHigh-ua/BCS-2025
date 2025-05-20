@@ -1,7 +1,6 @@
 (props) => {
   const { UIComponents, LucidReact, data } = props;
-  const { Card, CardHeader, CardTitle, CardDescription, CardContent } =
-    UIComponents;
+  const { CardHeader, CardTitle, CardDescription, CardContent } = UIComponents;
   const { MoreHorizontal } = LucidReact;
   const { Separator } = UIComponents;
   const chartData = data?.uptimeData || [];
@@ -13,7 +12,7 @@
   };
 
   return (
-    <Card className="w-[398px] shadow-sm">
+    <>
       <CardHeader className="pb-4">
         <div className="flex justify-between items-start">
           <div>
@@ -66,6 +65,6 @@
           </div>
         </div>
       </CardContent>
-    </Card>
+    </>
   );
 };

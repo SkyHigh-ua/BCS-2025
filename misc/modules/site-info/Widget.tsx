@@ -1,24 +1,22 @@
 (props) => {
   const { UIComponents, LucidReact, data } = props;
-  const { Card, CardHeader, CardTitle, CardDescription, CardContent } =
-    UIComponents;
+  const { CardHeader, CardTitle, CardDescription, CardContent } = UIComponents;
   const { Table, TableBody, TableRow, TableCell } = UIComponents;
   const { MoreHorizontal } = LucidReact;
-  const siteInfoData = data.siteInfoData;
-  // const siteInfoData = [
-  //   { label: "WordPress Version", value: "6.0" },
-  //   { label: "Debug Mode", value: "Disabled" },
-  //   { label: "PHP Version", value: "7.4.29" },
-  //   { label: "PHP Memory Limit", value: "512M" },
-  //   { label: "MySQL Version", value: "10.5.15-MariaDB-cll-lve" },
-  //   { label: "Server IP", value: "185.166.188.30" },
-  //   { label: "Site Health", value: "Should be improved", status: "warning" },
-  //   { label: "Domain expired", value: "August 20, 2025" },
-  //   { label: "SSL expires", value: "October 04, 2025" },
-  // ];
+  const siteInfoData = data?.siteInfoData || [
+    { label: "WordPress Version", value: "6.0" },
+    { label: "Debug Mode", value: "Disabled" },
+    { label: "PHP Version", value: "7.4.29" },
+    { label: "PHP Memory Limit", value: "512M" },
+    { label: "MySQL Version", value: "10.5.15-MariaDB-cll-lve" },
+    { label: "Server IP", value: "185.166.188.30" },
+    { label: "Site Health", value: "Should be improved", status: "warning" },
+    { label: "Domain expired", value: "August 20, 2025" },
+    { label: "SSL expires", value: "October 04, 2025" },
+  ];
 
   return (
-    <Card className="w-[380px] shadow-sm">
+    <>
       <CardHeader className="pb-4">
         <div className="flex justify-between items-start">
           <div>
@@ -52,6 +50,6 @@
           </TableBody>
         </Table>
       </CardContent>
-    </Card>
+    </>
   );
 };
