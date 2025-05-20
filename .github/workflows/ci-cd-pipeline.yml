@@ -90,10 +90,8 @@ jobs:
           terraform apply -auto-approve tfplan
 
   services:
-    needs: [changes, db]
-    if:
-      ${{ (needs.changes.outputs.services == 'true' || contains(github.event.head_commit.message, '[force]') == 'true') &&
-      (needs.db.result == 'success' || needs.db.result == 'skipped') }}
+    needs: [changes]
+    if: ${{ (needs.changes.outputs.services == 'true' || contains(github.event.head_commit.message, '[force]') == 'true') }}
     runs-on: ubuntu-latest
 
     steps:
