@@ -245,7 +245,6 @@ export function Sidebar({
                       Widgets
                     </NavigationMenuLink>
                   </Button>
-                  =
                   <Button
                     variant="ghost"
                     className="flex h-7 items-center gap-2 px-4 py-2 justify-start rounded-md w-full"

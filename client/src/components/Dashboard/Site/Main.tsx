@@ -21,9 +21,9 @@ export function Main({ siteId }: { siteId: string }): JSX.Element {
   }, [siteId]);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 grid-flow-row-dense auto-rows-min">
       {widgets.map((widget) => (
-        <Widget widgetId={widget.id} siteId={siteId} />
+        <Widget key={widget.id} widgetId={widget.id} siteId={siteId} />
       ))}
     </div>
   );

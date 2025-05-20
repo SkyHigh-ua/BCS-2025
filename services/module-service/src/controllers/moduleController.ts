@@ -175,55 +175,44 @@ export class ModuleController {
     }
   }
 
-  async removeModulesFromSite(req: Request, res: Response) {
-    const { siteId } = req.params;
-    const { moduleIds } = req.body;
+  async removeModuleFromSite(req: Request, res: Response) {
+    const { siteId, moduleId } = req.params;
 
-    if (!Array.isArray(moduleIds) || moduleIds.length === 0) {
-      return res
-        .status(400)
-        .json({ message: "moduleIds must be a non-empty array" });
+    if (!moduleId) {
+      return res.status(400).json({ message: "moduleId is required" });
     }
 
     try {
-      await this.moduleRepository.removeModulesFromSite(
+      await this.moduleRepository.removeModuleFromSite(
         Number(siteId),
-        moduleIds
+        Number(moduleId)
       );
 
       try {
-        for (const moduleId of moduleIds) {
-          await axios.delete(`${process.env.SCHEDULER_SERVICE_URL}/schedule`, {
-            data: { siteId, moduleId },
-            headers: {
-              Authorization: `Bearer ${
-                req.headers.authorization?.split(" ")[1]
-              }`,
-            },
-          });
-        }
+        await axios.delete(`${process.env.SCHEDULER_SERVICE_URL}/schedule`, {
+          params: { siteId, moduleId },
+          headers: {
+            Authorization: `Bearer ${req.headers.authorization?.split(" ")[1]}`,
+          },
+        });
       } catch (schedulerError) {
-        logger.warn(`Could not remove scheduled tasks: ${schedulerError}`);
+        logger.warn(`Could not remove scheduled task: ${schedulerError}`);
       }
 
       logger.info(
-        `[${req.method}] ${req.url} - 200: Modules [${moduleIds.join(
-          ", "
-        )}] removed from site ${siteId}`
+        `[${req.method}] ${req.url} - 200: Module ${moduleId} removed from site ${siteId}`
       );
       res.status(200).json({
-        message: `Modules [${moduleIds.join(
-          ", "
-        )}] removed from site ${siteId}`,
+        message: `Module ${moduleId} removed from site ${siteId}`,
       });
     } catch (error) {
       logger.error(
-        `[${req.method}] ${req.url} - 500: Error removing modules from site`,
+        `[${req.method}] ${req.url} - 500: Error removing module from site`,
         error
       );
       res
         .status(500)
-        .json({ message: "Error removing modules from site", error });
+        .json({ message: "Error removing module from site", error });
     }
   }
 

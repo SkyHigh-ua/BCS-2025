@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { PluginController } from "../controllers/pluginController";
-import { validateRole } from "../middleware/authMiddleware";
+import { validateJWT, validateRole } from "../middleware/authMiddleware";
 
 const router = Router();
 const pluginController = new PluginController();
@@ -15,31 +15,37 @@ router.get(
 
 router.post(
   "/",
+  validateJWT,
   validateRole(["0"]),
   pluginController.createPlugin.bind(pluginController)
 );
 router.put(
   "/:id",
+  validateJWT,
   validateRole(["0"]),
   pluginController.updatePlugin.bind(pluginController)
 );
 router.delete(
   "/:id",
+  validateJWT,
   validateRole(["0"]),
   pluginController.deletePlugin.bind(pluginController)
 );
 router.post(
   "/:id/load",
+  validateJWT,
   validateRole(["0"]),
   pluginController.loadPlugin.bind(pluginController)
 );
 router.post(
   "/site/:pluginId",
+  validateJWT,
   validateRole(["0"]),
   pluginController.assignPluginToSite.bind(pluginController)
 );
 router.put(
   "/:pluginId/config",
+  validateJWT,
   validateRole(["0"]),
   pluginController.updatePluginFqdnAndOutputs.bind(pluginController)
 );

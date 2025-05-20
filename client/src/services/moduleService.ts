@@ -82,17 +82,17 @@ export const getModulesBySiteId = async (siteId: string): Promise<Module[]> => {
   return response.data;
 };
 
-export const removeModulesFromSite = async (
+export const removeModuleFromSite = async (
   siteId: string,
-  moduleIds: string[]
-): Promise<{ message: string }> => {
-  const response = await axios({
-    method: "DELETE",
-    url: `${API_BASE_URL}/site/${siteId}/modules`,
-    headers: getAuthHeaders(),
-    data: { moduleIds },
-  });
-  return response.data;
+  moduleId: string
+): Promise<{ success: boolean }> => {
+  const response = await axios.delete(
+    `${API_BASE_URL}/${moduleId}/site/${siteId}`,
+    {
+      headers: getAuthHeaders(),
+    }
+  );
+  return { success: response.status === 200 };
 };
 
 export const getWidgetComponent = async (
@@ -120,6 +120,6 @@ export const toggleModuleForSite = async (
   if (enable) {
     return assignModules(siteId, [moduleId]);
   } else {
-    return removeModulesFromSite(siteId, [moduleId]);
+    return removeModuleFromSite(siteId, moduleId);
   }
 };

@@ -7,7 +7,7 @@ import * as LucidReact from "lucide-react";
 import { LoaderCircle } from "lucide-react";
 
 interface WidgetProps {
-  widgetId: string;
+  widgetId: string | number;
   siteId: string;
 }
 
@@ -39,7 +39,7 @@ export default function Widget({ widgetId, siteId }: WidgetProps): JSX.Element {
 
   if (loading) {
     return (
-      <Card className="flex flex-col p-4 items-center justify-center border-gray-300">
+      <Card className="h-full flex flex-col p-4 items-center justify-center border-gray-300">
         <LoaderCircle className="w-8 h-8 animate-spin text-primary mb-2" />
         <p>Loading widget...</p>
       </Card>
@@ -54,7 +54,7 @@ export default function Widget({ widgetId, siteId }: WidgetProps): JSX.Element {
 
   return (
     <Card
-      className={`max-w-fit ${
+      className={`h-full ${
         componentCode ? "" : "text-amber-500 border-red-500 p-4"
       }`}
     >

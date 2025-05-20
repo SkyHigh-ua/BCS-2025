@@ -54,10 +54,10 @@ router.post(
   moduleController.assignModulesToSite.bind(moduleController)
 );
 router.delete(
-  "/site/:siteId/modules",
+  "/:moduleId/site/:siteId",
   validateJWT,
   validateRole(["0", "1"]),
-  moduleController.removeModulesFromSite.bind(moduleController)
+  moduleController.removeModuleFromSite.bind(moduleController)
 );
 
 export default router;

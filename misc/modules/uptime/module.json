@@ -7,6 +7,16 @@
         "type": "string",
         "description": "The domain to check uptime for"
       }
+    },
+    "uptime": {
+      "timestamp": {
+        "type": "string",
+        "description": "The timestamp to check uptime for"
+      },
+      "uptimeData": {
+        "type": "array",
+        "description": "The status of the uptime check (up or down)"
+      }
     }
   },
   "outputs": {

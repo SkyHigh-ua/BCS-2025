@@ -150,10 +150,39 @@ export class PluginController {
     const { siteId } = req.params;
     try {
       const plugins = await this.pluginRepository.getSitePlugins(siteId);
+
+      const pluginsWithDetails = await Promise.all(
+        plugins.map(async (plugin) => {
+          const readmeUrl = `${plugin.repoLink}/README.md`;
+          const downloadUrl = plugin.repoLink; // TODO: Update this to the actual download URL
+
+          let readmeContent = "";
+          try {
+            const response = await fetch(readmeUrl.replace("/tree/", "/raw/"));
+            if (response.ok) {
+              readmeContent = await response.text();
+            } else {
+              logger.warn(`Failed to fetch README for plugin ${plugin.name}`);
+            }
+          } catch (error) {
+            logger.error(
+              `Error fetching README for plugin ${plugin.name}:`,
+              error
+            );
+          }
+
+          return {
+            ...plugin,
+            readme: readmeContent,
+            downloadUrl: downloadUrl,
+          };
+        })
+      );
+
       logger.info(
         `[${req.method}] ${req.url} - 200: Plugins fetched for site ${siteId}`
       );
-      res.status(200).json(plugins);
+      res.status(200).json(pluginsWithDetails);
     } catch (error) {
       logger.error("Error fetching site plugins:", error);
       res.status(500).json({ message: "Error fetching site plugins", error });

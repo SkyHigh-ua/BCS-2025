@@ -53,14 +53,14 @@ export default function Plugins({ site }: { site: Site }): JSX.Element {
           const plugin = await fetchSitePlugin(site.id);
           setPluginName(plugin.name);
           setPluginDownloadUrl(plugin.downloadUrl);
-          setFormData(
-            plugin.fields.map((field: any) => ({
-              type: field.type,
-              params: field.params,
-              datatype: field.datatype,
-              value: field.value || "",
-            }))
-          );
+          // setFormData(
+          //   plugin?.requirements.map((field: any) => ({
+          //     type: field.type,
+          //     params: field.params,
+          //     datatype: field.datatype,
+          //     value: field.value || "",
+          //   }))
+          // );
           setInstallationSteps(plugin.readme?.split("\n") || []);
           setHasPlugin(true);
         } catch (error) {
@@ -87,25 +87,23 @@ export default function Plugins({ site }: { site: Site }): JSX.Element {
 
   const handleAssignPlugin = async (pluginId: string) => {
     try {
-      const result = await assignPluginToSite(pluginId, site.id);
-      if (result.success) {
-        // Reload the plugin data
-        const plugin = await fetchSitePlugin(site.id);
-        setPluginName(plugin.name);
-        setPluginDownloadUrl(plugin.downloadUrl);
-        setFormData(
-          plugin.fields.map((field: any) => ({
-            type: field.type,
-            params: field.params,
-            datatype: field.datatype,
-            value: field.value || "",
-          }))
-        );
-        setInstallationSteps(plugin.readme?.split("\n") || []);
-        setHasPlugin(true);
-      }
+      await assignPluginToSite(pluginId, site.id);
+      const plugin = await fetchSitePlugin(site.id);
+      setPluginName(plugin.name);
+      setPluginDownloadUrl(plugin.downloadUrl);
+      // setFormData(
+      //   plugin?.requirements.map((field: any) => ({
+      //     type: field.type,
+      //     params: field?.params,
+      //     datatype: field.datatype,
+      //     value: field.description || "",
+      //   }))
+      // );
+      setInstallationSteps(plugin.readme?.split("\n") || []);
+      setHasPlugin(true);
     } catch (error) {
       console.error("Error assigning plugin:", error);
+      setHasPlugin(false);
     }
   };
 
@@ -136,8 +134,7 @@ export default function Plugins({ site }: { site: Site }): JSX.Element {
             <CardContent className="flex items-start justify-between p-6">
               <div className="flex flex-col gap-1.5">
                 <p className="text-base font-medium">
-                  Detected CMS:{" "}
-                  <span className="text-[#2f80ed]">{pluginName}</span>
+                  Plugin: <span className="text-[#2f80ed]">{pluginName}</span>
                 </p>
                 <p className="text-sm text-muted-foreground max-w-[380px]">
                   To connect your site, install our official plugin and follow
@@ -192,7 +189,7 @@ export default function Plugins({ site }: { site: Site }): JSX.Element {
               </CardDescription>
             </CardHeader>
 
-            <CardContent className="space-y-4">
+            <CardContent className="w-full space-y-4">
               {formData.map((field, index) => (
                 <div key={index} className="space-y-1.5">
                   <Label htmlFor={index}>{field.params?.label || index}</Label>
@@ -235,8 +232,8 @@ export default function Plugins({ site }: { site: Site }): JSX.Element {
           </Card>
         </>
       ) : (
-        <main className="flex flex-col w-full gap-4 p-4 bg-background border border-solid border-1-shadcn-ui-color-modes-sidebar-sidebar-border">
-          <header className="flex flex-col py-6 px-4 gap-6 w-full">
+        <Card className="w-full shadow-sm">
+          <CardHeader className="flex flex-col py-6 px-4 gap-6 w-full">
             <div className="flex flex-col gap-1.5 w-full">
               <h1 className="text-2xl font-semibold text-foreground">
                 Available Plugins
@@ -247,8 +244,8 @@ export default function Plugins({ site }: { site: Site }): JSX.Element {
               </p>
             </div>
             <Separator className="w-full" />
-          </header>
-          <div className="flex flex-wrap gap-2.5 py-2.5">
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-2.5 py-2.5">
             {availablePlugins.map((plugin, index) => (
               <Card key={index} className="flex-1 min-w-[250px]">
                 <CardContent className="p-3">
@@ -286,8 +283,8 @@ export default function Plugins({ site }: { site: Site }): JSX.Element {
                 </CardContent>
               </Card>
             ))}
-          </div>
-        </main>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

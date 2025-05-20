@@ -135,27 +135,18 @@ export class ModuleRepository {
     }
   }
 
-  async removeModulesFromSite(
-    siteId: number,
-    moduleIds: number[]
-  ): Promise<void> {
+  async removeModuleFromSite(siteId: number, moduleId: number): Promise<void> {
     try {
-      const placeholders = moduleIds
-        .map((_, index) => `$${index + 2}`)
-        .join(", ");
-      const query = `DELETE FROM site_modules 
+      await this.pool.query(
+        `DELETE FROM site_modules 
                      WHERE site_id = $1 
-                     AND module_id IN (${placeholders})`;
-
-      await this.pool.query(query, [siteId, ...moduleIds]);
-      logger.debug(
-        `Modules [${moduleIds.join(", ")}] removed from site ${siteId}`
+                     AND module_id IN ($2)`,
+        [siteId, moduleId]
       );
+      logger.debug(`Module [${moduleId}] removed from site ${siteId}`);
     } catch (error) {
       logger.error(
-        `Error removing modules [${moduleIds.join(
-          ", "
-        )}] from site (${siteId}):`,
+        `Error removing module [${moduleId}] from site (${siteId}):`,
         error
       );
       throw new Error("Database error");

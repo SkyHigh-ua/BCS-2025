@@ -90,7 +90,7 @@ export class ScheduleController {
   }
 
   public unscheduleModule(req: Request, res: Response): Response {
-    const { siteId, moduleId } = req.body;
+    const { siteId, moduleId } = req.params;
 
     logger.debug(`Unscheduling module ${moduleId} for site ${siteId}`);
 
