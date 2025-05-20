@@ -5,23 +5,18 @@ on:
     branches: ["*"]
   pull_request:
     branches: ["*"]
-  workflow_dispatch:
-    inputs:
-      skip_check:
-        description: "Skip changes detection"
-        type: boolean
-        default: false
-        required: false
 
 env:
   AWS_REGION: ${{ vars.AWS_REGION }}
   ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+  # Extract if commit message contains [force] tag
+  FORCE_BUILD: ${{ contains(github.event.head_commit.message, '[force]') }}
 
 jobs:
   # Job to detect changes in each directory
   changes:
     runs-on: ubuntu-latest
-    if: ${{ github.event.inputs.skip_check != 'true' }}
+    if: ${{ !contains(github.event.head_commit.message, '[force]') }}
     outputs:
       infrastructure: ${{ steps.filter.outputs.infrastructure }}
       database: ${{ steps.filter.outputs.database }}
@@ -56,7 +51,7 @@ jobs:
 
   default-outputs:
     runs-on: ubuntu-latest
-    if: ${{ github.event.inputs.skip_check == 'true' }}
+    if: ${{ contains(github.event.head_commit.message, '[force]') }}
     outputs:
       infrastructure: "true"
       database: "true"
@@ -64,11 +59,11 @@ jobs:
       gateway: "true"
       client: "true"
     steps:
-      - run: echo "Skipping changes detection, setting all outputs to true"
+      - run: echo "Force build triggered via commit message containing [force]. Setting all outputs to true."
 
   infrastructure:
     needs: [changes, default-outputs]
-    if: ${{ (needs.changes.outputs.infrastructure == 'true' || github.event.inputs.skip_check == 'true') }}
+    if: ${{ (needs.changes.outputs.infrastructure == 'true' || contains(github.event.head_commit.message, '[force]')) }}
     runs-on: ubuntu-latest
 
     steps:
@@ -110,7 +105,7 @@ jobs:
 
   db:
     needs: [changes, default-outputs, infrastructure]
-    if: ${{ (needs.changes.outputs.database == 'true' || github.event.inputs.skip_check == 'true') && (needs.infrastructure.result == 'success' || needs.infrastructure.result == 'cancelled') }}
+    if: ${{ (needs.changes.outputs.database == 'true' || contains(github.event.head_commit.message, '[force]')) && (needs.infrastructure.result == 'success' || needs.infrastructure.result == 'cancelled') }}
     runs-on: ubuntu-latest
 
     steps:
@@ -178,14 +173,7 @@ jobs:
 
           if [[ "$SEED_CHECK" == *"t"* ]]; then
             echo "Database already seeded. Checking if forced seed is required."
-            
-            # Check if FORCE_SEED is set in environment or input variables
-            if [[ "${{ github.event.inputs.force_seed }}" == "true" ]]; then
-              echo "Forced seed requested, proceeding with seeding."
-            else
-              echo "Skipping seed as database is already seeded."
-              exit 0
-            fi
+            exit 0
           fi
 
           # Run seed files
@@ -213,7 +201,7 @@ jobs:
 
   services:
     needs: [changes, default-outputs, db]
-    if: ${{ (needs.changes.outputs.services == 'true' || github.event.inputs.skip_check == 'true') && (needs.db.result == 'success' || needs.db.result == 'cancelled') }}
+    if: ${{ (needs.changes.outputs.services == 'true' || contains(github.event.head_commit.message, '[force]')) && (needs.db.result == 'success' || needs.db.result == 'cancelled') }}
     runs-on: ubuntu-latest
 
     steps:
@@ -235,10 +223,10 @@ jobs:
         id: find-services
         run: |
           cd ./services
-          if [ "${{ github.event.inputs.skip_check }}" == "true" ]; then
-            # Process all services when skip_check is true
+          if [[ "${{ contains(github.event.head_commit.message, '[force]') }}" == "true" ]]; then
+            # Process all services when force is true
             echo "service_list=$(find . -maxdepth 1 -type d -not -path '.' | sed 's|./||' | tr '\n' ' ')" >> $GITHUB_OUTPUT
-            echo "Processing all services (skip_check=true)"
+            echo "Processing all services (force build triggered via commit message)"
           else
             # Get the list of modified files in the services directory
             MODIFIED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} 2>/dev/null | grep '^services/' || echo "")
@@ -312,7 +300,7 @@ jobs:
 
   gateway:
     needs: [changes, default-outputs, services]
-    if: ${{ (needs.changes.outputs.gateway == 'true' || github.event.inputs.skip_check == 'true') && (needs.services.result == 'success' || needs.services.result == 'cancelled') }}
+    if: ${{ (needs.changes.outputs.gateway == 'true' || contains(github.event.head_commit.message, '[force]')) && (needs.services.result == 'success' || needs.services.result == 'cancelled') }}
     runs-on: ubuntu-latest
 
     steps:
@@ -352,7 +340,7 @@ jobs:
 
   client:
     needs: [changes, default-outputs, gateway]
-    if: ${{ (needs.changes.outputs.client == 'true' || github.event.inputs.skip_check == 'true') && (needs.gateway.result == 'success' || needs.gateway.result == 'cancelled') }}
+    if: ${{ (needs.changes.outputs.client == 'true' || contains(github.event.head_commit.message, '[force]')) && (needs.gateway.result == 'success' || needs.gateway.result == 'cancelled') }}
     runs-on: ubuntu-latest
 
     steps:
