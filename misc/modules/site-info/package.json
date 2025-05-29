@@ -1,0 +1,17 @@
+{
+  "name": "site-info",
+  "version": "1.0.0",
+  "description": "Module for checking site information",
+  "main": "module.ts",
+  "scripts": {
+    "start": "ts-node module.ts",
+    "build": "tsc",
+    "test": "echo \"No tests yet\""
+  },
+  "dependencies": {
+    "typescript": "^4.9.5",
+    "ts-node": "^10.9.1"
+  },
+  "author": "",
+  "license": "ISC"
+}

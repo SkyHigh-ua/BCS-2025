@@ -1,0 +1,6 @@
+INSERT INTO public.modules (name, description, repo_link, inputs, outputs, tags)
+VALUES 
+    ('Uptime', 'A module to check the uptime of a system.', 'https://github.com/SkyHigh-ua/BCS-2025/tree/dev/misc/modules/uptime', '{"site": {"domain": {"type": "string","description": "The domain to check uptime for"}}}', '{"uptimeData": {"overall": {"type": "string","description": "Status of the system uptime"}}}', ARRAY['uptime', 'default']),
+    ('Site info', 'A module to check the information of a site.', 'https://github.com/SkyHigh-ua/BCS-2025/tree/dev/misc/modules/site-info', '{"site": {"domain": { "type": "string","description": "The domain to check uptime for"}}}', '{"siteInfo": {"details": {"type": "object","description": "Detailed information about the site"}}}', ARRAY['default', 'site']),
+    ('Domain info', 'A module to check the information of a site domain.', 'https://github.com/SkyHigh-ua/BCS-2025/tree/dev/misc/modules/domain-info', '{"site": {"domain": {"type": "string","description": "The domain to check uptime for"}}}', '{"siteInfo": {"details": {"type": "object","description": "Detailed information about the site domain"}}}', ARRAY['default', 'domain'])
+ON CONFLICT DO NOTHING;

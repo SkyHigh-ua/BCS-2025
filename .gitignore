@@ -1,0 +1,47 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs
+*.log
+logs/**/*.log
+
+# Coverage
+coverage/
+
+# Dependency directories
+jspm_packages/
+
+# Docker
+docker-compose.override.yml
+.dockerignore
+
+# React
+*.cache
+*.env.local
+*.env.development.local
+*.env.test.local
+*.env.production.local
+.vscode/
+.idea/
+.DS_Store
+
+# Terraform
+**/.terraform/*
+.terraform*
+*.tfstate
+*.tfstate.*
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraform.tfstate.lock.info
+.tfvars
+.aws

@@ -1,0 +1,179 @@
+x-env: &service-env
+  DATABASE_URL: postgresql://postgres:password@db:5432/postgres
+  JWT_SECRET: key
+  NODE_ENV: dev
+  GATEWAY_URL: http://gateway:4000
+  AUTH_SERVICE_URL: http://auth-service:5001
+  USER_SERVICE_URL: http://user-service:5002
+  RBAC_SERVICE_URL: http://rbac-service:5003
+  SITE_SERVICE_URL: http://site-service:5004
+  PLUGIN_SERVICE_URL: http://plugin-service:5005
+  MODULE_SERVICE_URL: http://module-service:5010
+  MODULE_CONTROLLER_SERVICE_URL: http://module-controller-service:5011
+  SCHEDULER_SERVICE_URL: http://scheduler-service:5012
+
+services:
+  auth-service:
+    build:
+      context: .
+      dockerfile: ./build/Dockerfile.service
+      args:
+        SERVICE_NAME: auth-service
+    ports:
+      - "5001:5000"
+    environment:
+      <<: *service-env
+      PORT: 5001
+    depends_on:
+      - db
+
+  user-service:
+    build:
+      context: .
+      dockerfile: ./build/Dockerfile.service
+      args:
+        SERVICE_NAME: user-service
+    ports:
+      - "5002:5000"
+    environment:
+      <<: *service-env
+      PORT: 5002
+    depends_on:
+      - db
+
+  rbac-service:
+    build:
+      context: .
+      dockerfile: ./build/Dockerfile.service
+      args:
+        SERVICE_NAME: rbac-service
+    ports:
+      - "5003:5000"
+    environment:
+      <<: *service-env
+      PORT: 5003
+    depends_on:
+      - db
+
+  site-service:
+    build:
+      context: .
+      dockerfile: ./build/Dockerfile.service
+      args:
+        SERVICE_NAME: site-service
+    ports:
+      - "5004:5000"
+    environment:
+      <<: *service-env
+      PORT: 5004
+    depends_on:
+      - db
+
+  plugin-service:
+    build:
+      context: .
+      dockerfile: ./build/Dockerfile.service
+      args:
+        SERVICE_NAME: plugin-service
+    ports:
+      - "5005:5000"
+    environment:
+      <<: *service-env
+      PORT: 5005
+    depends_on:
+      - db
+
+  module-service:
+    build:
+      context: .
+      dockerfile: ./build/Dockerfile.service
+      args:
+        SERVICE_NAME: module-service
+    ports:
+      - "5010:5000"
+    environment:
+      <<: *service-env
+      PORT: 5010
+    depends_on:
+      - db
+
+  module-controller-service:
+    build:
+      context: .
+      dockerfile: ./build/Dockerfile.service
+      args:
+        SERVICE_NAME: module-controller-service
+    ports:
+      - "5011:5000"
+    environment:
+      <<: *service-env
+      PORT: 5011
+    depends_on:
+      - db
+
+  scheduler-service:
+    build:
+      context: .
+      dockerfile: ./build/Dockerfile.service
+      args:
+        SERVICE_NAME: scheduler-service
+    ports:
+      - "5012:5000"
+    environment:
+      <<: *service-env
+      PORT: 5012
+    depends_on:
+      - module-service
+      - module-controller-service
+      - site-service
+
+  gateway:
+    build:
+      context: .
+      dockerfile: ./build/Dockerfile.gateway
+    ports:
+      - "4000:4000"
+    environment:
+      <<: *service-env
+      PORT: 4000
+    depends_on:
+      - auth-service
+      - user-service
+      - rbac-service
+      - site-service
+      - plugin-service
+      - scheduler-service
+      - module-service
+      - module-controller-service
+
+  client:
+    build:
+      context: .
+      dockerfile: ./build/Dockerfile.client
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: dev
+      API_BASE_URL: http://localhost:4000
+    depends_on:
+      - gateway
+
+  db:
+    build:
+      context: .
+      dockerfile: ./build/Dockerfile.database
+      args:
+        POSTGRES_USER: postgres
+        POSTGRES_PASSWORD: password
+        POSTGRES_DB: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+volumes:
+  db_data:

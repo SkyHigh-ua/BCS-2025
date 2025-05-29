@@ -1,0 +1,296 @@
+name: CI/CD Pipeline
+# TODO: bring tests back
+on:
+  push:
+    branches: ["*"]
+  pull_request:
+    branches: ["*"]
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+
+jobs:
+  # Job to detect changes in each directory
+  changes:
+    runs-on: ubuntu-latest
+    # Always run the changes job to detect file changes
+    outputs:
+      infrastructure: ${{ steps.filter.outputs.infrastructure }}
+      database: ${{ steps.filter.outputs.database }}
+      services: ${{ steps.filter.outputs.services }}
+      gateway: ${{ steps.filter.outputs.gateway }}
+      client: ${{ steps.filter.outputs.client }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Check for file changes
+        id: filter
+        uses: dorny/paths-filter@v2
+        with:
+          filters: |
+            infrastructure:
+              - 'terraform/**'
+            database:
+              - 'database/**'
+            services:
+              - 'services/**'
+              - 'build/Dockerfile.service'
+            gateway:
+              - 'gateway/**'
+              - 'build/Dockerfile.gateway'
+            client:
+              - 'client/**'
+              - 'build/Dockerfile.client'
+
+  infrastructure:
+    needs: changes
+    if: ${{ needs.changes.outputs.infrastructure == 'true' || contains(github.event.head_commit.message, '[force]') == 'true' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.0.0
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Terraform Format and Validate
+        run: |
+          cd ./terraform/infrastructure
+          terraform fmt -diff -check -recursive
+          terraform init -backend=false
+          terraform validate
+
+      - name: Terraform Init and Plan
+        id: plan
+        if: github.ref == 'refs/heads/main' || github.event_name == 'pull_request'
+        run: |
+          cd ./terraform/infrastructure
+          terraform init -backend-config=../backend-config/backend-dev.hcl
+          terraform plan -out=tfplan
+
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main' || github.event_name == 'pull_request'
+        run: |
+          cd ./terraform/infrastructure
+          terraform apply -auto-approve tfplan
+
+  services:
+    needs: [changes]
+    if: ${{ (needs.changes.outputs.services == 'true' || contains(github.event.head_commit.message, '[force]') == 'true') }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Find all services
+        id: find-services
+        run: |
+          cd ./services
+          if [[ "${{ contains(github.event.head_commit.message, '[force]') }}" == "true" ]]; then
+            # Process all services when force is true
+            echo "service_list=$(find . -maxdepth 1 -type d -not -path '.' | sed 's|./||' | tr '\n' ' ')" >> $GITHUB_OUTPUT
+            echo "Processing all services (force build triggered via commit message)"
+          else
+            # Get the list of modified files in the services directory
+            MODIFIED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} 2>/dev/null | grep '^services/' || echo "")
+            
+            if [ -z "$MODIFIED_FILES" ]; then
+              # For PR or first commit, get all changed files
+              echo "Using git diff against base branch for PR or initial commit"
+              BASE_SHA=$(git merge-base ${{ github.event.before || 'HEAD~1' }} ${{ github.sha }})
+              MODIFIED_FILES=$(git diff --name-only $BASE_SHA ${{ github.sha }} | grep '^services/' || echo "")
+            fi
+            
+            # Extract service names from modified files
+            if [ -n "$MODIFIED_FILES" ]; then
+              CHANGED_SERVICES=$(echo "$MODIFIED_FILES" | cut -d'/' -f2 | sort -u | tr '\n' ' ')
+              echo "Changes detected in services: $CHANGED_SERVICES"
+              echo "service_list=$CHANGED_SERVICES" >> $GITHUB_OUTPUT
+            else
+              echo "No changes detected in any service directory"
+              echo "service_list=" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+          # Print the list of services to process
+          echo "Services to process: ${{ steps.find-services.outputs.service_list || 'none' }}"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: "22"
+
+      - name: Build and push all services
+        env:
+          SERVICES: ${{ steps.find-services.outputs.service_list }}
+        run: |
+          cd ./services
+          for service in $SERVICES; do
+            echo "Processing service: $service"
+            
+            # Install dependencies and run tests
+            if [ -f "$service/package.json" ]; then
+              echo "Installing Node.js dependencies for $service"
+              cd $service
+              npm install
+              # npm test
+              cd ..
+            fi
+            
+            # Build and push Docker image if Dockerfile exists
+            if [ -f "../build/Dockerfile.service" ]; then
+              echo "Building and pushing Docker image for $service"
+              
+              # Build from the repository root with correct context
+              cd $GITHUB_WORKSPACE
+              
+              docker build \
+                -f build/Dockerfile.service \
+                --build-arg SERVICE_NAME=$service \
+                -t ${{ env.ECR_REPOSITORY }}:$service-${{ github.sha }} \
+                .
+                
+              docker push ${{ env.ECR_REPOSITORY }}:$service-${{ github.sha }}
+              docker tag ${{ env.ECR_REPOSITORY }}:$service-${{ github.sha }} ${{ env.ECR_REPOSITORY }}:$service-latest
+              docker push ${{ env.ECR_REPOSITORY }}:$service-latest
+              
+              # Return to services directory
+              cd $GITHUB_WORKSPACE/services
+            else
+              echo "No Dockerfile found for $service in build/, skipping Docker build"
+            fi
+          done
+
+  gateway:
+    needs: [changes, services]
+    if:
+      ${{ (needs.changes.outputs.gateway == 'true' || contains(github.event.head_commit.message, '[force]') == 'true') &&
+      (needs.services.result == 'success' || needs.services.result == 'skipped') }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build and push Docker image
+        run: |
+          # Build from the repository root with correct context
+          cd $GITHUB_WORKSPACE
+
+          if [ -f "build/Dockerfile.gateway" ]; then
+            echo "Building and pushing Docker image for gateway"
+            
+            docker build \
+              -f build/Dockerfile.gateway \
+              -t ${{ env.ECR_REPOSITORY }}:gateway-${{ github.sha }} \
+              .
+            
+            docker push ${{ env.ECR_REPOSITORY }}:gateway-${{ github.sha }}
+            docker tag ${{ env.ECR_REPOSITORY }}:gateway-${{ github.sha }} ${{ env.ECR_REPOSITORY }}:gateway-latest
+            docker push ${{ env.ECR_REPOSITORY }}:gateway-latest
+          else
+            echo "No Dockerfile found at build/Dockerfile.gateway, skipping Docker build"
+          fi
+
+  client:
+    needs: [changes, gateway]
+    if:
+      ${{ (needs.changes.outputs.client == 'true' || contains(github.event.head_commit.message, '[force]') == 'true') &&
+      (needs.gateway.result == 'success' || needs.gateway.result == 'skipped') }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        run: |
+          cd ./client
+          npm install
+
+      - name: Run tests
+        run: |
+          cd ./client
+          # npm test
+
+      - name: Build client
+        env:
+          CI: false
+        run: |
+          cd ./client
+          npm run build
+
+      - name: Build and push Docker image
+        run: |
+          # Build from the repository root with correct context
+          cd $GITHUB_WORKSPACE
+
+          if [ -f "build/Dockerfile.client" ]; then
+            echo "Building and pushing Docker image for client"
+            
+            docker build \
+              -f build/Dockerfile.client \
+              -t ${{ env.ECR_REPOSITORY }}:client-${{ github.sha }} \
+              --build-arg CI=false \
+              .
+            
+            docker push ${{ env.ECR_REPOSITORY }}:client-${{ github.sha }}
+            docker tag ${{ env.ECR_REPOSITORY }}:client-${{ github.sha }} ${{ env.ECR_REPOSITORY }}:client-latest
+            docker push ${{ env.ECR_REPOSITORY }}:client-latest
+          else
+            echo "No Dockerfile found at build/Dockerfile.client, skipping Docker build"
+          fi

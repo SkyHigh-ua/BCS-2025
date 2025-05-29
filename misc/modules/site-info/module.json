@@ -1,0 +1,22 @@
+{
+  "name": "site-info",
+  "description": "A module to check the information of a site.",
+  "inputs": {
+    "site": {
+      "domain": {
+        "type": "string",
+        "description": "The domain to check uptime for"
+      }
+    }
+  },
+  "outputs": {
+    "siteInfo": {
+      "details": {
+        "type": "object",
+        "description": "Detailed information about the site"
+      }
+    }
+  },
+  "tags": ["site-info"],
+  "requirements": []
+}
