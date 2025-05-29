@@ -1,7 +1,9 @@
 import { PluginController } from "../src/controllers/pluginController";
 import { PluginRepository } from "../src/dal/PluginRepository";
+import { loadPluginService } from "../src/services/pluginLoader";
 
 jest.mock("../src/dal/PluginRepository");
+jest.mock("../src/services/pluginLoader");
 
 const mockPluginRepository =
   new PluginRepository() as jest.Mocked<PluginRepository>;
@@ -172,5 +174,53 @@ describe("Plugin Controller", () => {
 
     expect(res.status).toHaveBeenCalledWith(204);
     expect(res.send).toHaveBeenCalled();
+  });
+
+  it("should load a plugin successfully", async () => {
+    const mockLoadPluginService = loadPluginService as jest.MockedFunction<
+      typeof loadPluginService
+    >;
+    mockLoadPluginService.mockResolvedValue();
+
+    const req = {
+      params: { id: "1" },
+      body: { sshKey: "test-ssh-key", otherParams: { param1: "value1" } },
+    } as any;
+    const res = { status: jest.fn().mockReturnThis(), json: jest.fn() } as any;
+
+    await pluginController.loadPlugin(req, res);
+
+    expect(mockLoadPluginService).toHaveBeenCalledWith("1", "test-ssh-key", {
+      param1: "value1",
+    });
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      message: "Plugin loaded successfully",
+    });
+  });
+
+  it("should handle errors when loading a plugin", async () => {
+    const mockError = new Error("Load plugin error");
+    const mockLoadPluginService = loadPluginService as jest.MockedFunction<
+      typeof loadPluginService
+    >;
+    mockLoadPluginService.mockRejectedValue(mockError);
+
+    const req = {
+      params: { id: "1" },
+      body: { sshKey: "test-ssh-key", otherParams: { param1: "value1" } },
+    } as any;
+    const res = { status: jest.fn().mockReturnThis(), json: jest.fn() } as any;
+
+    await pluginController.loadPlugin(req, res);
+
+    expect(mockLoadPluginService).toHaveBeenCalledWith("1", "test-ssh-key", {
+      param1: "value1",
+    });
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({
+      message: "Error loading plugin",
+      error: mockError,
+    });
   });
 });

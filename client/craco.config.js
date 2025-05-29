@@ -19,5 +19,29 @@ module.exports = {
         "process.env": JSON.stringify(process.env),
       }),
     ],
+    configure: (webpackConfig) => {
+      // Add support for ESM modules in tests
+      if (process.env.NODE_ENV === "test") {
+        webpackConfig.module.rules.push({
+          test: /\.(js|mjs|jsx|ts|tsx)$/,
+          exclude: /node_modules\/(?!(axios|react-router-dom)\/).*/,
+          use: {
+            loader: "babel-loader",
+            options: {
+              presets: ["@babel/preset-env"],
+            },
+          },
+        });
+      }
+      return webpackConfig;
+    },
+  },
+  jest: {
+    configure: {
+      moduleNameMapper: {
+        "^@/(.*)$": "<rootDir>/src/$1",
+      },
+      transformIgnorePatterns: ["node_modules/(?!(axios|react-router-dom)/)"],
+    },
   },
 };
